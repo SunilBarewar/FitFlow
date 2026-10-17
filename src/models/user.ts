@@ -25,6 +25,11 @@ const userSchema = new Schema(
       minlength: 8,
       select: false,
     },
+    goal: {
+      type: String,
+      enum: ["strength", "fat_loss", "endurance", "general"],
+      default: "general",
+    },
   },
   { timestamps: true },
 );
