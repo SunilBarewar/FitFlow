@@ -21,7 +21,7 @@ import {
   Repeat2,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 /* ─── Types ─── */
 interface FeatureCardProps {
