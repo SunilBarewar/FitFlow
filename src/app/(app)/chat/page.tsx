@@ -1,13 +1,16 @@
 "use client";
 
-import { LogOut, MessageCircle, RefreshCw, Zap } from "lucide-react";
+import { MessageCircle, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChatShell } from "@/features/chat/components/chat-shell";
+import { ContextBar } from "@/features/chat/components/context-bar";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/fit-toaster";
 import { useSession } from "@/features/auth/hooks/use-session";
 import { useSignOut } from "@/features/auth/hooks/use-sign-out";
 import { getErrorMessage } from "@/features/auth/lib/api-client";
+import { mockProfile, mockProgress } from "@/features/chat/mock-data";
 
 function ChatSkeleton() {
   return (
@@ -28,7 +31,13 @@ function ChatSkeleton() {
   );
 }
 
-function ChatError({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ChatError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center sm:px-6">
       <div className="rounded-2xl bg-destructive/10 p-4 text-destructive">
@@ -38,7 +47,9 @@ function ChatError({ message, onRetry }: { message: string; onRetry: () => void 
         <h1 className="text-xl font-semibold tracking-tight">
           We couldn&apos;t load your session
         </h1>
-        <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {message}
+        </p>
       </div>
       <Button
         type="button"
@@ -54,8 +65,14 @@ function ChatError({ message, onRetry }: { message: string; onRetry: () => void 
 
 export default function ChatPage() {
   const router = useRouter();
-  const { data: user, isLoading, isError, error, refetch, isFetching } =
-    useSession();
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useSession();
   const signOut = useSignOut();
 
   if (isLoading) {
@@ -113,68 +130,25 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-4 px-4 sm:px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2"
-            aria-label="FitFlow home"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-              <Zap size={16} className="text-primary-foreground" aria-hidden />
-            </span>
-            <span className="text-base font-bold tracking-tight">FitFlow.</span>
-          </Link>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-xl h-11 w-11"
-            aria-label="Sign out"
-            disabled={signOut.isPending}
-            onClick={handleSignOut}
-          >
-            <LogOut size={20} aria-hidden />
-          </Button>
-        </div>
-      </header>
+    <div className="flex h-screen flex-col bg-background">
+      <ContextBar
+        profile={{ ...mockProfile, name: firstName }}
+        progress={mockProgress}
+        onSignOut={handleSignOut}
+        signOutPending={signOut.isPending}
+      />
 
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6 sm:px-6">
-        <div className="mb-6 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Coach chat</h1>
-          <p className="text-sm text-muted-foreground">
-            Hi {firstName} — ask anything about your plan or today&apos;s
-            workout.
-          </p>
-        </div>
-
-        <div
-          className="flex flex-1 flex-col items-center justify-center gap-4 rounded-3xl border border-border bg-brand-green-light/40 p-8 text-center min-h-[280px]"
+      {isFetching && !isLoading ? (
+        <p
+          className="border-b border-border bg-card py-1.5 text-center text-xs text-muted-foreground"
+          aria-live="polite"
         >
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <MessageCircle size={28} aria-hidden />
-          </span>
-          <div className="space-y-2 max-w-sm">
-            <h2 className="text-lg font-semibold">No messages yet</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              When chat goes live, your coach will meet you here. For now,
-              explore your plan from the home screen.
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="inline-flex min-h-11 items-center justify-center rounded-pill border border-border bg-background px-6 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            Back to home
-          </Link>
-        </div>
+          Refreshing session…
+        </p>
+      ) : null}
 
-        {isFetching && !isLoading ? (
-          <p className="mt-4 text-center text-xs text-muted-foreground" aria-live="polite">
-            Refreshing session…
-          </p>
-        ) : null}
+      <main className="flex min-h-0 flex-1 flex-col">
+        <ChatShell userName={firstName} />
       </main>
     </div>
   );
