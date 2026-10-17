@@ -1,0 +1,216 @@
+---
+description: FitFlow design system — tokens, components, patterns, and mobile-first rules for all UI code
+alwaysApply: true
+---
+
+# FitFlow Design System
+
+Full reference: `docs/design-system.md`. This rule gives the essential rules every coding agent must follow.
+
+## Stack
+- **Tailwind CSS v4** with `@theme inline` — use `bg-primary`, `text-foreground`, etc.
+- **shadcn/ui** components as the base — extend, don't rewrite.
+- **OKLCH** color space throughout. Never hardcode hex/rgb/hsl.
+- All tokens live in `src/app/globals.css`.
+
+---
+
+## Color Tokens — Required Usage
+
+Always use semantic tokens, never brand tokens directly in components.
+
+| Token | Use for |
+|---|---|
+| `bg-background` | Page / screen backgrounds |
+| `bg-card` | Card surfaces, panels |
+| `bg-primary` / `text-primary` | Primary CTAs, active nav, key highlights |
+| `bg-secondary` | Chip backgrounds, subtle surfaces |
+| `bg-muted` | Disabled states, empty area fills |
+| `text-muted-foreground` | Captions, labels, secondary text |
+| `bg-accent` / `text-accent` | Motivational highlights, streaks, energy |
+| `text-destructive` | Errors, warnings, safety notices |
+| `bg-brand-green-light` | Tinted success/completion surfaces |
+| `bg-brand-coral-light` | Warm energy/accent surface tints |
+| `bg-brand-sky-light` | Calm info surfaces |
+
+**Never do:**
+```tsx
+// ❌ Hardcoded color
+<div className="bg-[#22c55e] text-white">
+
+// ❌ Direct brand token on interactive element
+<Button className="bg-brand-coral">
+
+// ✅ Correct
+<Button className="bg-primary text-primary-foreground">
+<div className="bg-brand-green-light text-primary">
+```
+
+---
+
+## Typography Scale
+
+Use Tailwind text utilities. Never set raw `font-size` in CSS.
+
+| Class | Use |
+|---|---|
+| `text-3xl font-bold tracking-tight` | Page titles (H1) |
+| `text-2xl font-semibold` | Section headings (H2) |
+| `text-xl font-semibold` | Card headings (H3) |
+| `text-base font-medium` | Body emphasis, labels |
+| `text-sm text-muted-foreground` | Captions, hints, metadata |
+| `text-xs` | Badges, micro-labels |
+
+Line height: default `leading-snug` for headings, `leading-relaxed` for body copy.
+
+---
+
+## Spacing & Layout
+
+- **Mobile-first**: Start at 375px. Use `sm:`, `md:`, `lg:` to scale up.
+- Base grid unit: `4px` (Tailwind default). Always use multiples (`p-4`, `gap-6`, not `p-3.5`).
+- Page padding: `px-4 sm:px-6 lg:px-8`
+- Section spacing: `py-8 sm:py-12 lg:py-16`
+- Card padding: `p-4 sm:p-6`
+- Stack gap: `gap-3` for tight lists, `gap-4` for cards, `gap-6` for sections.
+
+---
+
+## Border Radius
+
+Always use the radius token scale — never arbitrary values.
+
+| Token | Value | Use |
+|---|---|---|
+| `rounded-sm` (`--radius-sm`) | 8px | Inline tags, chips |
+| `rounded-lg` (`--radius-lg`) | 12px | Cards, inputs |
+| `rounded-xl` (`--radius-xl`) | 16px | Large cards, drawers |
+| `rounded-3xl` (`--radius-3xl`) | 24px | Bottom sheets, featured cards |
+| `rounded-pill` (`--radius-pill`) | 9999px | Buttons (primary), avatars, badges |
+
+---
+
+## Component Patterns
+
+### Buttons
+```tsx
+// Primary CTA — always pill, high contrast
+<Button className="rounded-pill h-12 px-8 text-base font-semibold">
+  Start Workout
+</Button>
+
+// Secondary — ghost or outlined pill
+<Button variant="outline" className="rounded-pill h-12 px-6">
+  View Plan
+</Button>
+
+// Icon button — square with rounded-xl
+<Button variant="ghost" size="icon" className="rounded-xl h-11 w-11">
+  <Icon />
+</Button>
+```
+
+Minimum touch target: `min-h-[44px] min-w-[44px]`.
+
+### Cards
+```tsx
+// Standard card
+<div className="rounded-xl bg-card p-4 border border-border shadow-none">
+
+// Featured / elevated card
+<div className="rounded-3xl bg-primary p-6 text-primary-foreground">
+
+// Tinted surface card
+<div className="rounded-xl bg-brand-green-light p-4">
+```
+
+No `box-shadow` classes. Use `border border-border` for definition.
+
+### Inputs
+```tsx
+<Input className="h-12 rounded-lg text-base" placeholder="..." />
+```
+
+### Chips / Tags
+```tsx
+// Selectable chip
+<button className="rounded-pill h-9 px-4 text-sm font-medium bg-secondary text-secondary-foreground border border-border transition-colors hover:bg-primary hover:text-primary-foreground">
+  3 days / week
+</button>
+
+// Active state
+<button className="rounded-pill h-9 px-4 text-sm font-medium bg-primary text-primary-foreground">
+  Selected
+</button>
+```
+
+### Bottom Navigation (mobile)
+```tsx
+<nav className="fixed bottom-0 inset-x-0 pb-safe bg-card/95 backdrop-blur-md border-t border-border z-50">
+  <div className="flex justify-around items-center h-16 px-2">
+    {/* Nav items */}
+  </div>
+</nav>
+```
+
+### Skeleton Loaders
+Always use `animate-pulse` with shape-matching containers. Never spinners for content.
+```tsx
+<div className="h-6 w-3/4 rounded-lg bg-muted animate-pulse" />
+```
+
+---
+
+## Motion & Animation
+
+- Use `transition-*` utilities for state changes. Duration: `duration-150` to `duration-300`.
+- Prefer `ease-out` for entrances, `ease-in` for exits.
+- Page transitions: subtle `opacity` + `translate-y-1` (never slide full-screen unless it's a bottom sheet).
+- `tw-animate-css` is available — use `animate-fade-in`, `animate-slide-in-from-bottom` etc.
+- Respect `prefers-reduced-motion`: wrap complex animations in `@media (prefers-reduced-motion: no-preference)`.
+
+---
+
+## Mobile-First Rules
+
+1. Default layout is single-column, full-width.
+2. Tap targets: always `min-h-[44px]`, never smaller.
+3. Use `pb-safe` / `pt-safe` on fixed elements near screen edges.
+4. Bottom sheets > modals on mobile. Use `rounded-t-3xl` on drawers.
+5. Avoid `hover:` as the only interaction signal — pair with `active:`.
+6. Use `-webkit-tap-highlight-color: transparent` (already set in base styles).
+7. Test at 375px width first, then expand.
+8. Sticky header height: `h-14` (56px). Account for this with `pt-14` on page content.
+9. Bottom nav height: `h-16` (64px). Add `pb-16` or use `.bottom-nav-safe` utility.
+
+---
+
+## Icons
+Use `lucide-react` exclusively. Size conventions:
+- `size={16}` — inline in text, badges
+- `size={20}` — buttons, nav items (default)
+- `size={24}` — card headers, standalone actions
+- `size={28}` — featured icons
+
+Always pair icons with `aria-hidden` and a text label or `aria-label`.
+
+---
+
+## Accessibility Baseline
+- Contrast: ≥ 4.5:1 for normal text, ≥ 3:1 for large text.
+- All interactive elements: keyboard-navigable with visible `focus-visible` ring.
+- Form inputs: always paired with a visible `<label>`.
+- Images: meaningful `alt` text, decorative images `alt=""`.
+- Use semantic HTML: `<nav>`, `<main>`, `<section>`, `<header>`, `<button>` (not `<div onClick>`).
+
+---
+
+## What NOT to Do
+
+- ❌ `style={{ color: '#...' }}` — use token classes
+- ❌ `className="shadow-lg"` — no box shadows; use borders
+- ❌ Gradient backgrounds on text-heavy surfaces
+- ❌ `z-[999]` arbitrary z-indices — use a clear z-index scale
+- ❌ `overflow-hidden` that cuts off focus rings
+- ❌ Placeholder text as a label substitute
+- ❌ Multiple primary CTAs on one screen

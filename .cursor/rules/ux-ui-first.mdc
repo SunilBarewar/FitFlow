@@ -1,0 +1,68 @@
+---
+description: Mandatory UX/UI thinking step before building any interface in FitFlow
+alwaysApply: true
+---
+
+# Think UX/UI First — Always
+
+Before writing a single line of UI code, pause and reason through the experience explicitly. This is non-negotiable.
+
+## The Mandatory Pre-Build Checklist
+
+For every UI task — screen, component, card, modal, or interaction — answer these questions before opening a file:
+
+1. **Who is using this, and what are they trying to accomplish right now?**  
+   Fitness users are often mid-workout, sweaty, fatigued, or one-handed. Design for their real context.
+
+2. **What is the single most important thing on this screen?**  
+   One primary action. Everything else is supporting. If two things feel equally important, you have a design problem.
+
+3. **Is this mobile-friendly as the primary experience?**  
+   FitFlow is a mobile-first product. Default to 375px viewport thinking. Touch targets ≥ 44px. No hover-only interactions.
+
+4. **Can this be simpler?**  
+   Remove anything that doesn't directly help the user complete their intent. Fitness users don't read — they scan and act.
+
+5. **Does the interaction feel fast and responsive?**  
+   Provide immediate feedback on every tap/click. Use optimistic UI where safe. Skeletons over spinners.
+
+6. **Are transitions and motion purposeful?**  
+   Motion should reinforce hierarchy and direction — not decorate. Avoid motion for motion's sake.
+
+7. **Does this maintain brand consistency?**  
+   Use design tokens from the design system. Never hardcode hex colors or arbitrary spacing values.
+
+## UX Principles for FitFlow
+
+- **Coach feel, not app feel.** The product should feel warm, personal, and encouraging — not clinical or corporate.
+- **One step at a time.** Never overwhelm. Progressive disclosure is default.
+- **Celebrate progress.** Completion states, streaks, and milestones should feel rewarding.
+- **Forgiveness.** Every destructive action is reversible or confirmed. Users can undo plan changes.
+- **Speed of access.** The most used actions — start workout, log set, view today's plan — are always one or two taps away.
+- **Reduce cognitive load.** Summarize, don't list everything. Show what matters now, let users drill deeper.
+
+## Anti-Patterns to Avoid
+
+- ❌ Long forms — break into conversational steps
+- ❌ Modal on modal — flatten the interaction
+- ❌ Generic empty states ("No data yet") — use motivating, contextual copy
+- ❌ Disabled buttons with no explanation — tell the user why
+- ❌ Inconsistent icon sizes or mixed icon sets
+- ❌ Text that requires effort to read — maintain contrast ratios ≥ 4.5:1
+- ❌ Jumping content on load — reserve space with skeletons
+
+## Good UX Examples for FitFlow
+
+**Empty workout state:**  
+❌ "No workouts found."  
+✅ "Ready for today? Your coach will build a session that fits your schedule."  
+
+**Error state:**  
+❌ "Something went wrong."  
+✅ "We couldn't load your plan. [Try again] — your progress is safe."  
+
+**Loading state:**  
+Use skeleton loaders that match the shape of the real content, not spinners.
+
+## Reference
+Full design system: `docs/design-system.md`
