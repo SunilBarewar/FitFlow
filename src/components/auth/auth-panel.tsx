@@ -20,8 +20,10 @@ const AFFIRMATIONS = [
   "The future you is already grateful.",
 ] as const;
 
-const PATH_D =
-  "M28 232 C110 206 96 176 168 168 C236 161 214 128 268 110 C282 105 292 96 300 88";
+/* The journey ends at the final milestone flag (258, 118) — the sun
+   stays in the sky beyond it: a backdrop to aim toward, not a place
+   the traveller walks into. */
+const PATH_D = "M28 232 C110 206 96 176 168 168 C236 161 218 130 258 118";
 
 /** The tip of a flower/grass tuft sways around its base at (x, y). */
 function Sway({
@@ -51,7 +53,7 @@ function Sway({
 /**
  * A living morning: the sun rises once, then keeps breathing light.
  * Clouds and mist drift, flowers sway, a butterfly loops the meadow,
- * and a small traveller walks the path toward the sun — forever.
+ * and a small traveller walks the path to its final flag, under the sun.
  */
 function SunriseIllustration({ reduceMotion }: { reduceMotion: boolean }) {
   const loop = (duration: number, delay = 0) => ({
@@ -65,7 +67,7 @@ function SunriseIllustration({ reduceMotion }: { reduceMotion: boolean }) {
     <svg
       viewBox="0 0 420 250"
       role="img"
-      aria-label="A sunrise over rolling hills, with a winding path leading toward the sun"
+      aria-label="A sunrise over rolling hills, with a winding path leading to a small flag on a hilltop"
       className="w-full max-w-md"
     >
       {/* Last twinkles of the night, fading as the day arrives */}
@@ -74,7 +76,7 @@ function SunriseIllustration({ reduceMotion }: { reduceMotion: boolean }) {
           { x: 52, y: 34, delay: 0 },
           { x: 128, y: 58, delay: 1.1 },
           { x: 196, y: 26, delay: 2 },
-          { x: 366, y: 44, delay: 0.6 },
+          { x: 402, y: 132, delay: 0.6 },
         ].map(({ x, y, delay }) => (
           <motion.path
             key={x}
@@ -90,7 +92,7 @@ function SunriseIllustration({ reduceMotion }: { reduceMotion: boolean }) {
       {/* Clouds drifting through the morning */}
       {[
         { x: 66, y: 52, s: 1, duration: 16, delay: 0 },
-        { x: 330, y: 28, s: 0.7, duration: 20, delay: 1.5 },
+        { x: 236, y: 30, s: 0.7, duration: 20, delay: 1.5 },
       ].map(({ x, y, s, duration, delay }) => (
         <motion.g
           key={x}
@@ -119,22 +121,22 @@ function SunriseIllustration({ reduceMotion }: { reduceMotion: boolean }) {
           {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
             <line
               key={angle}
-              x1="300"
-              y1="22"
-              x2="300"
-              y2="33"
-              transform={`rotate(${angle} 300 82)`}
+              x1="364"
+              y1="2"
+              x2="364"
+              y2="13"
+              transform={`rotate(${angle} 364 54)`}
             />
           ))}
         </g>
         <motion.g
           animate={reduceMotion ? undefined : { scale: [1, 1.05, 1] }}
           transition={loop(5)}
-          style={{ transformOrigin: "300px 82px" }}
+          style={{ transformOrigin: "364px 54px" }}
         >
-          <circle cx="300" cy="82" r="46" className="fill-brand-coral/25" />
-          <circle cx="300" cy="82" r="32" className="fill-brand-coral" />
-          <circle cx="289" cy="71" r="9" className="fill-white/25" />
+          <circle cx="364" cy="54" r="46" className="fill-brand-coral/25" />
+          <circle cx="364" cy="54" r="32" className="fill-brand-coral" />
+          <circle cx="353" cy="43" r="9" className="fill-white/25" />
         </motion.g>
       </motion.g>
 
@@ -206,25 +208,39 @@ function SunriseIllustration({ reduceMotion }: { reduceMotion: boolean }) {
         </>
       )}
 
-      {/* Milestones along the way — gently pulsing, one after another */}
+      {/*
+        Milestones — little checkpoint flags planted on the path.
+        A flag reads instantly as "a point you're heading to", where a
+        plain dot just looked like part of the dotted path. Each flag
+        sways gently; the last one, nearest the sun, stands tallest.
+      */}
       {[
-        { cx: 96, cy: 194, delay: 0 },
-        { cx: 188, cy: 164, delay: 0.9 },
-        { cx: 258, cy: 118, delay: 1.8 },
-      ].map(({ cx, cy, delay }) => (
-        <motion.circle
-          key={cx}
-          cx={cx}
-          cy={cy}
-          r="5"
-          className="fill-primary"
-          animate={
-            reduceMotion
-              ? undefined
-              : { opacity: [0.35, 1, 0.35], r: [4, 6, 4] }
-          }
-          transition={loop(2.7, delay)}
-        />
+        { x: 96, y: 194, delay: 0, scale: 1 },
+        { x: 188, y: 164, delay: 0.9, scale: 1 },
+        { x: 258, y: 118, delay: 1.8, scale: 1.5 },
+      ].map(({ x, y, delay, scale }) => (
+        <Sway key={x} x={x} y={y} delay={delay} reduceMotion={reduceMotion}>
+          <g transform={`translate(${x} ${y}) scale(${scale})`}>
+            {/* Base — a clear stop on the path, distinct from its dots */}
+            <circle
+              r="5.5"
+              className="fill-white stroke-primary"
+              strokeWidth="2"
+            />
+            <circle r="2" className="fill-primary" />
+            {/* Flagpole + flag */}
+            <line
+              x1="0"
+              y1="-4"
+              x2="0"
+              y2="-21"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className="stroke-foreground/60"
+            />
+            <polygon points="0,-21 13,-17 0,-13" className="fill-brand-coral" />
+          </g>
+        </Sway>
       ))}
 
       {/* Meadow flowers, swaying in the breeze */}
@@ -315,7 +331,7 @@ function SunriseIllustration({ reduceMotion }: { reduceMotion: boolean }) {
           { cx: 70, cy: 120, delay: 0 },
           { cx: 150, cy: 84, delay: 1.4 },
           { cx: 356, cy: 150, delay: 0.7 },
-          { cx: 386, cy: 96, delay: 2 },
+          { cx: 386, cy: 142, delay: 2 },
           { cx: 216, cy: 132, delay: 2.6 },
         ].map(({ cx, cy, delay }) => (
           <motion.circle

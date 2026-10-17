@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Eye,
   EyeOff,
@@ -12,11 +13,15 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useSignUp } from "@/features/auth/hooks/use-sign-up";
+import { getErrorMessage } from "@/features/auth/lib/api-client";
+import { cn } from "@/lib/utils/cn";
 /* ─── Journey step data ─── */
 
 /* ─── Sign Up Form ─── */
 function SignUpForm() {
+  const router = useRouter();
+  const signUp = useSignUp();
   const [step, setStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState({
     name: "",
@@ -25,7 +30,6 @@ function SignUpForm() {
     goal: "" as string,
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const goals = [
@@ -56,10 +60,22 @@ function SignUpForm() {
       return;
     }
     setErrors({});
-    setLoading(true);
-    // TODO: Implement actual auth
-    await new Promise((r) => setTimeout(r, 1400));
-    setLoading(false);
+    try {
+      await signUp.mutateAsync({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        goal: formData.goal,
+      });
+      router.push("/chat");
+    } catch (err) {
+      setErrors({
+        form: getErrorMessage(
+          err,
+          "We couldn't create your account. Please try again.",
+        ),
+      });
+    }
   }
 
   const field = (
@@ -283,6 +299,16 @@ function SignUpForm() {
             </div>
 
             <AnimatePresence>
+              {errors.form && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3"
+                >
+                  {errors.form}
+                </motion.p>
+              )}
               {errors.goal && (
                 <motion.p
                   initial={{ opacity: 0, height: 0 }}
@@ -307,9 +333,9 @@ function SignUpForm() {
               <Button
                 type="submit"
                 className="flex-[2] rounded-full h-12 text-base font-semibold gap-2"
-                disabled={loading}
+                disabled={signUp.isPending}
               >
-                {loading ? (
+                {signUp.isPending ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
                     Setting up…

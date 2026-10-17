@@ -1,18 +1,25 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useSignIn } from "@/features/auth/hooks/use-sign-in";
+import { getErrorMessage } from "@/features/auth/lib/api-client";
+import { cn } from "@/lib/utils/cn";
 /* ─── Sign In Form ─── */
 function SignInForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const signIn = useSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/chat";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,10 +28,14 @@ function SignInForm() {
       setError("Please fill in all fields.");
       return;
     }
-    setLoading(true);
-    // TODO: wire up real auth
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
+    try {
+      await signIn.mutateAsync({ email, password });
+      router.push(callbackUrl.startsWith("/") ? callbackUrl : "/chat");
+    } catch (err) {
+      setError(
+        getErrorMessage(err, "We couldn't sign you in. Please try again."),
+      );
+    }
   }
 
   return (
@@ -128,9 +139,9 @@ function SignInForm() {
         <Button
           type="submit"
           className="w-full rounded-full h-12 text-base font-semibold gap-2"
-          disabled={loading}
+          disabled={signIn.isPending}
         >
-          {loading ? (
+          {signIn.isPending ? (
             <span className="flex items-center gap-2">
               <span className="w-4 h-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
               Signing in…
@@ -177,6 +188,24 @@ function SignInForm() {
   );
 }
 
+function SignInFallback() {
+  return (
+    <div className="mx-auto w-full max-w-sm px-4 py-12 sm:px-0 space-y-6">
+      <div className="h-9 w-48 rounded-lg bg-muted animate-pulse" />
+      <div className="h-4 w-64 rounded-lg bg-muted animate-pulse" />
+      <div className="space-y-4">
+        <div className="h-12 rounded-xl bg-muted animate-pulse" />
+        <div className="h-12 rounded-xl bg-muted animate-pulse" />
+        <div className="h-12 rounded-pill bg-muted animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 export default function SignInPage() {
-  return <SignInForm />;
+  return (
+    <Suspense fallback={<SignInFallback />}>
+      <SignInForm />
+    </Suspense>
+  );
 }
