@@ -311,6 +311,17 @@ export function useChatConversation(userName: string, initialData?: Conversation
     setPanel((prev) => ({ ...prev, tab, highlightTab: null }));
   }, []);
 
+  const persistBlockSelection = useCallback(
+    (blockId: string, selection: string[] | string) => {
+      void fetch("/api/coach/messages", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blockId, selection }),
+      });
+    },
+    [],
+  );
+
   const startNewChat = useCallback(async (): Promise<boolean> => {
     setStartNewChatPending(true);
     historyEpoch.current += 1;
@@ -323,6 +334,9 @@ export function useChatConversation(userName: string, initialData?: Conversation
       if (!response.ok) return false;
       setMessages([]);
       syncedPlanBlockIds.current.clear();
+      setHasPlan(false);
+      setDayLog(null);
+      setPanel({ tab: "today", plan: null, today: null, highlightTab: null });
       return true;
     } catch {
       return false;
@@ -350,6 +364,7 @@ export function useChatConversation(userName: string, initialData?: Conversation
     startAdjustedWorkout,
     keepOriginalWorkout,
     setPanelTab,
+    persistBlockSelection,
     startNewChat,
     startNewChatPending,
   };

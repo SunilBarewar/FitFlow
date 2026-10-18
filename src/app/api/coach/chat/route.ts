@@ -85,6 +85,13 @@ export async function POST(request: Request) {
   try {
     modelMessages = await convertToModelMessages(uiMessages, {
       tools: coachAgent.tools,
+      convertDataPart: (part) => {
+        const data = part.data as { type?: string } | null;
+        return {
+          type: "text" as const,
+          text: `[Widget shown: ${data?.type ?? "block"}]`,
+        };
+      },
     });
   } catch (error) {
     const message =

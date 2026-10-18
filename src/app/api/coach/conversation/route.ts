@@ -95,6 +95,11 @@ export async function DELETE() {
 
   await MessageModel.deleteMany({ conversationId: conversation._id });
 
+  await ConversationModel.updateOne(
+    { _id: conversation._id },
+    { $set: { hasPlan: false, activePlan: null, dailyLogs: [] } },
+  );
+
   return Response.json({ cleared: true });
 }
 

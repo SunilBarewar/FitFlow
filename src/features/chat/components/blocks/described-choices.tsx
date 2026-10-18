@@ -13,14 +13,20 @@ export function DescribedChoices({
   options,
   icons,
   resolved,
+  initialSelectedId,
   onSelect,
+  onPersistSubmit,
 }: {
   options: Choice[];
   icons?: Record<string, LucideIcon>;
   resolved: boolean;
+  initialSelectedId?: string;
   onSelect: (optionId: string, label: string) => void;
+  onPersistSubmit?: (id: string) => void;
 }) {
-  const [clickedId, setClickedId] = useState<string | null>(null);
+  const [clickedId, setClickedId] = useState<string | null>(
+    initialSelectedId ?? null,
+  );
   const sent = useRef(false);
   const known = clickedId !== null;
 
@@ -41,6 +47,7 @@ export function DescribedChoices({
               sent.current = true;
               setClickedId(option.id);
               onSelect(option.id, option.label);
+              onPersistSubmit?.(option.id);
             }}
             className={cn(
               "flex min-h-11 w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors duration-150",

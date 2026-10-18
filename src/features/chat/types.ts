@@ -78,9 +78,9 @@ export type ChatBlock =
       id: string;
       options: ChoiceOption[];
     }
-  | { type: "experience"; id: string }
-  | { type: "muscle_focus"; id: string }
-  | { type: "equipment_access"; id: string }
+  | { type: "experience"; id: string; selected?: string }
+  | { type: "muscle_focus"; id: string; selected?: string[] }
+  | { type: "equipment_access"; id: string; selected?: string[] }
   | {
       type: "safety_notice";
       id: string;

@@ -23,8 +23,8 @@ export function ChatPageClient({
   async function handleStartNewChat() {
     const cleared = await conversation.startNewChat();
     if (cleared) {
-      toast.success("New chat started", {
-        description: "Your plan and progress are still here when you need them.",
+      toast.success("New plan started", {
+        description: "Everything has been reset. Let's build your next plan!",
       });
       document.getElementById("coach-chat-main")?.scrollIntoView({
         behavior: "smooth",

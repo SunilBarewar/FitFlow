@@ -1,11 +1,12 @@
 "use client";
 
 import { cn } from "cn";
-import { LogOut, MessageSquarePlus, User } from "lucide-react";
+import { LogOut, RotateCcw, User } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FitFlowLogo } from "@/components/brand/fitflow-logo";
+import { Dialog, DialogCenterContent, DialogClose } from "@/components/ui/dialog";
 
 const menuItemClass =
   "flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
@@ -22,6 +23,7 @@ export function ContextBar({
   signOutPending: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
     top: number;
     right: number;
@@ -81,8 +83,13 @@ export function ContextBar({
     };
   }, [open]);
 
-  function handleStartNewChat() {
+  function handleStartNewPlanClick() {
     setOpen(false);
+    setConfirmOpen(true);
+  }
+
+  function handleConfirmStartNewPlan() {
+    setConfirmOpen(false);
     onStartNewChat();
   }
 
@@ -110,10 +117,10 @@ export function ContextBar({
               role="menuitem"
               disabled={startNewChatPending}
               className={menuItemClass}
-              onClick={handleStartNewChat}
+              onClick={handleStartNewPlanClick}
             >
-              <MessageSquarePlus size={18} aria-hidden />
-              Start new chat
+              <RotateCcw size={18} aria-hidden />
+              Start new plan
             </button>
             <div className="my-1 h-px bg-border" role="separator" />
             <button
@@ -135,35 +142,60 @@ export function ContextBar({
       : null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md pt-safe">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center"
-          aria-label="FitFlow home"
-        >
-          <FitFlowLogo size={36} priority />
-        </Link>
+    <>
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md pt-safe">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center"
+            aria-label="FitFlow home"
+          >
+            <FitFlowLogo size={36} priority />
+          </Link>
 
-        <button
-          ref={triggerRef}
-          type="button"
-          disabled={accountBusy}
-          aria-label="Account menu"
-          aria-expanded={open}
-          aria-haspopup="menu"
-          aria-controls={open ? menuId : undefined}
-          className={cn(
-            "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors outline-none",
-            "hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-            "disabled:pointer-events-none disabled:opacity-50",
-          )}
-          onClick={() => setOpen((value) => !value)}
+          <button
+            ref={triggerRef}
+            type="button"
+            disabled={accountBusy}
+            aria-label="Account menu"
+            aria-expanded={open}
+            aria-haspopup="menu"
+            aria-controls={open ? menuId : undefined}
+            className={cn(
+              "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors outline-none",
+              "hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+              "disabled:pointer-events-none disabled:opacity-50",
+            )}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <User size={20} aria-hidden />
+          </button>
+        </div>
+        {menu}
+      </header>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogCenterContent
+          title="Start a new plan?"
+          description="This will permanently delete your current plan, all workout progress, and your entire chat history. This action cannot be undone."
         >
-          <User size={20} aria-hidden />
-        </button>
-      </div>
-      {menu}
-    </header>
+          <div className="mt-5 flex flex-col gap-2">
+            <button
+              type="button"
+              disabled={startNewChatPending}
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-destructive px-4 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:pointer-events-none disabled:opacity-50"
+              onClick={handleConfirmStartNewPlan}
+            >
+              Yes, start new plan
+            </button>
+            <DialogClose
+              className="flex h-11 w-full items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              Cancel
+            </DialogClose>
+          </div>
+        </DialogCenterContent>
+      </Dialog>
+    </>
   );
 }

@@ -120,8 +120,12 @@ function BlockRenderer({
           options={EXPERIENCE_OPTIONS}
           icons={{ new: Sprout, returning: Dumbbell, regular: Flame }}
           resolved={resolved}
+          initialSelectedId={block.selected}
           onSelect={(optionId, label) =>
             conversation.selectChoice(optionId, label)
+          }
+          onPersistSubmit={(id) =>
+            conversation.persistBlockSelection(block.id, id)
           }
         />
       );
@@ -130,7 +134,11 @@ function BlockRenderer({
         <MuscleFocusBlock
           blockId={block.id}
           resolved={resolved}
+          initialSelected={block.selected}
           onSubmit={(label) => conversation.selectChoice(block.id, label)}
+          onPersistSubmit={(sel) =>
+            conversation.persistBlockSelection(block.id, sel)
+          }
         />
       );
     case "equipment_access":
@@ -138,7 +146,11 @@ function BlockRenderer({
         <EquipmentBlock
           blockId={block.id}
           resolved={resolved}
+          initialSelected={block.selected}
           onSubmit={(label) => conversation.selectChoice(block.id, label)}
+          onPersistSubmit={(sel) =>
+            conversation.persistBlockSelection(block.id, sel)
+          }
         />
       );
     case "multi_select_chips":

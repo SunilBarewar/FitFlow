@@ -51,4 +51,35 @@ function DialogSheetContent({
   );
 }
 
-export { Dialog, DialogTrigger, DialogClose, DialogSheetContent };
+function DialogCenterContent({
+  className,
+  children,
+  title,
+  description,
+  ...props
+}: DialogPrimitive.Popup.Props & { title: string; description?: string }) {
+  return (
+    <DialogPortal>
+      <DialogPrimitive.Popup
+        className={cn(
+          "fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-5 shadow-xl outline-none",
+          "transition-all duration-200 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
+          className,
+        )}
+        {...props}
+      >
+        <DialogPrimitive.Title className="text-base font-semibold">
+          {title}
+        </DialogPrimitive.Title>
+        {description && (
+          <DialogPrimitive.Description className="mt-1.5 text-sm text-muted-foreground">
+            {description}
+          </DialogPrimitive.Description>
+        )}
+        {children}
+      </DialogPrimitive.Popup>
+    </DialogPortal>
+  );
+}
+
+export { Dialog, DialogTrigger, DialogClose, DialogSheetContent, DialogCenterContent };

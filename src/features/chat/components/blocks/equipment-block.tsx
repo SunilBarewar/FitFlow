@@ -39,15 +39,21 @@ const PRESETS = [
 export function EquipmentBlock({
   blockId,
   resolved,
+  initialSelected,
   onSubmit,
+  onPersistSubmit,
 }: {
   blockId: string;
   resolved: boolean;
+  initialSelected?: string[];
   onSubmit: (label: string) => void;
+  onPersistSubmit?: (selection: string[]) => void;
 }) {
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(initialSelected ?? []);
   const [showSpecific, setShowSpecific] = useState(false);
-  const [submitted, setSubmitted] = useState<string[] | null>(null);
+  const [submitted, setSubmitted] = useState<string[] | null>(
+    resolved && initialSelected ? initialSelected : null,
+  );
   const sent = useRef(false);
   const active = submitted ?? selected;
   const known = submitted !== null;
@@ -177,6 +183,7 @@ export function EquipmentBlock({
               sent.current = true;
               setSubmitted(active);
               onSubmit(equipmentReply(active));
+              onPersistSubmit?.(active);
             }}
           />
         </div>
