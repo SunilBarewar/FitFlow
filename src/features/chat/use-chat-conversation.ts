@@ -313,13 +313,34 @@ export function useChatConversation(userName: string, initialData?: Conversation
 
   const persistBlockSelection = useCallback(
     (blockId: string, selection: string[] | string) => {
+      setMessages((prev) =>
+        prev.map((message) => {
+          const widgetPart = message.parts.find(isDataWidgetPart);
+          const block = widgetPart?.data;
+          if (!block || block.id !== blockId) return message;
+
+          return {
+            ...message,
+            parts: message.parts.map((part) => {
+              if (!isDataWidgetPart(part) || part.data.id !== blockId) {
+                return part;
+              }
+              return {
+                ...part,
+                data: { ...part.data, selected: selection },
+              };
+            }),
+          };
+        }),
+      );
+
       void fetch("/api/coach/messages", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ blockId, selection }),
       });
     },
-    [],
+    [setMessages],
   );
 
   const startNewChat = useCallback(async (): Promise<boolean> => {

@@ -3,7 +3,7 @@
 import { cn } from "cn";
 import { Check } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ChatBlock } from "@/features/chat/types";
 import { DescribedChoices } from "./described-choices";
 
@@ -24,12 +24,17 @@ export function ChoiceChipsBlock({
   block,
   resolved,
   onSelect,
+  onPersistSubmit,
 }: {
   block: ChoiceChipsBlock;
   resolved: boolean;
   onSelect: (optionId: string, label: string) => void;
+  onPersistSubmit?: (optionId: string) => void;
 }) {
-  const [clickedId, setClickedId] = useState<string | null>(null);
+  const [clickedId, setClickedId] = useState<string | null>(
+    block.selected ?? null,
+  );
+  const sent = useRef(false);
   const described = block.options.some((option) => option.description);
 
   if (described) {
@@ -37,7 +42,9 @@ export function ChoiceChipsBlock({
       <DescribedChoices
         options={block.options}
         resolved={resolved}
+        initialSelectedId={block.selected}
         onSelect={onSelect}
+        onPersistSubmit={onPersistSubmit}
       />
     );
   }
@@ -60,8 +67,11 @@ export function ChoiceChipsBlock({
             whileTap={resolved ? undefined : { scale: 0.95 }}
             disabled={resolved}
             onClick={() => {
+              if (sent.current || resolved) return;
+              sent.current = true;
               setClickedId(option.id);
               onSelect(option.id, option.label);
+              onPersistSubmit?.(option.id);
             }}
             className={cn(
               "inline-flex h-10 items-center gap-1.5 rounded-pill border px-4 text-sm font-medium transition-colors",
@@ -85,13 +95,18 @@ export function MultiSelectChipsBlock({
   block,
   resolved,
   onSubmit,
+  onPersistSubmit,
 }: {
   block: MultiSelectBlock;
   resolved: boolean;
   onSubmit: (ids: string[], labels: string[]) => void;
+  onPersistSubmit?: (ids: string[]) => void;
 }) {
-  const [selected, setSelected] = useState<string[]>([]);
-  const [submittedIds, setSubmittedIds] = useState<string[] | null>(null);
+  const [selected, setSelected] = useState<string[]>(block.selected ?? []);
+  const [submittedIds, setSubmittedIds] = useState<string[] | null>(
+    resolved && block.selected ? block.selected : null,
+  );
+  const sent = useRef(false);
 
   function toggle(id: string) {
     setSelected((prev) =>
@@ -141,11 +156,14 @@ export function MultiSelectChipsBlock({
           type="button"
           disabled={selected.length === 0}
           onClick={() => {
+            if (sent.current || selected.length === 0) return;
+            sent.current = true;
             const labels = block.options
               .filter((o) => selected.includes(o.id))
               .map((o) => o.label);
             setSubmittedIds(selected);
             onSubmit(selected, labels);
+            onPersistSubmit?.(selected);
           }}
           className="self-start rounded-pill bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-40"
         >

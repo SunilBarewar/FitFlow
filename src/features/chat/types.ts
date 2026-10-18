@@ -72,11 +72,13 @@ export type ChatBlock =
       type: "choice_chips";
       id: string;
       options: ChoiceOption[];
+      selected?: string;
     }
   | {
       type: "multi_select_chips";
       id: string;
       options: ChoiceOption[];
+      selected?: string[];
     }
   | { type: "experience"; id: string; selected?: string }
   | { type: "muscle_focus"; id: string; selected?: string[] }

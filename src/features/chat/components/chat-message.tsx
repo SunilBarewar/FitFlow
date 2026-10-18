@@ -112,6 +112,9 @@ function BlockRenderer({
           onSelect={(optionId, label) =>
             conversation.selectChoice(optionId, label)
           }
+          onPersistSubmit={(id) =>
+            conversation.persistBlockSelection(block.id, id)
+          }
         />
       );
     case "experience":
@@ -160,6 +163,9 @@ function BlockRenderer({
           resolved={resolved}
           onSubmit={(ids, labels) =>
             conversation.selectMultiChoice(ids, labels)
+          }
+          onPersistSubmit={(sel) =>
+            conversation.persistBlockSelection(block.id, sel)
           }
         />
       );
