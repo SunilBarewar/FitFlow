@@ -4,23 +4,29 @@ import {
   Activity,
   ArrowRight,
   BarChart3,
+  BatteryFull,
   CalendarDays,
-  CheckCircle2,
+  Check,
   ClipboardList,
   Dumbbell,
   Flame,
-  Menu,
+  Home,
+  MessageCircle,
   Play,
   Repeat2,
+  Sparkles,
   Star,
   Target,
-  X,
+  Trophy,
+  User,
+  Wifi,
 } from "lucide-react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { FitFlowLogo } from "@/components/brand/fitflow-logo";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { exerciseImageUrl } from "@/lib/exercises/image-url";
 import { cn } from "@/lib/utils/cn";
 
 /* ─── Types ─── */
@@ -40,8 +46,6 @@ interface StatCardProps {
 }
 
 /* ─── Constants ─── */
-const NAV_LINKS = ["Features", "Pricing", "Blog", "About"];
-
 const FEATURES = [
   {
     icon: <ClipboardList size={22} />,
@@ -157,161 +161,320 @@ const STEPS = [
   },
 ];
 
-/* ─── Floating phone mockup ─── */
+/* ─── Hero phone mockup ───
+   A believable moment from the real app, mid-workout: two exercises done,
+   the current one open at set 3, and the coach's note that prompted the
+   next weight. Decorative — the copy beside it carries the message. */
+const MOCK_EXERCISES = [
+  {
+    name: "Barbell Bench Press",
+    detail: "4 × 8 · 60 kg",
+    image: "Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+    state: "done" as const,
+  },
+  {
+    name: "Incline Dumbbell Press",
+    detail: "3 × 10 · 22 kg",
+    image: "Incline_Dumbbell_Press/0.jpg",
+    state: "done" as const,
+  },
+  {
+    name: "Lat Pulldown",
+    detail: "3 × 12 · 55 kg",
+    image: "Full_Range-Of-Motion_Lat_Pulldown/0.jpg",
+    state: "current" as const,
+  },
+  {
+    name: "Dumbbell Shoulder Press",
+    detail: "3 × 10 · 18 kg",
+    image: "Dumbbell_Shoulder_Press/0.jpg",
+    state: "next" as const,
+  },
+];
+
+function MockExerciseRow({
+  exercise,
+}: {
+  exercise: (typeof MOCK_EXERCISES)[number];
+}) {
+  const isCurrent = exercise.state === "current";
+  const isDone = exercise.state === "done";
+  return (
+    <li
+      className={cn(
+        "rounded-xl border p-2",
+        isCurrent
+          ? "border-primary/40 bg-brand-green-light/50"
+          : "border-border bg-card",
+      )}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-muted">
+          <Image
+            src={exerciseImageUrl(exercise.image)}
+            alt=""
+            fill
+            sizes="36px"
+            className={cn("object-cover", isDone && "opacity-70")}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p
+            className={cn(
+              "truncate text-[11px] leading-tight font-semibold",
+              isDone ? "text-muted-foreground" : "text-foreground",
+            )}
+          >
+            {exercise.name}
+          </p>
+          <p className="text-[10px] leading-tight text-muted-foreground">
+            {isCurrent ? "Set 3 of 3 · " : ""}
+            {exercise.detail}
+          </p>
+        </div>
+        {isDone ? (
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Check size={11} strokeWidth={3} aria-hidden />
+          </span>
+        ) : isCurrent ? (
+          <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold text-primary-foreground">
+            NOW
+          </span>
+        ) : (
+          <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
+            Up next
+          </span>
+        )}
+      </div>
+
+      {/* Set-by-set logging for the exercise in progress */}
+      {isCurrent ? (
+        <div className="mt-2 flex gap-1.5" aria-hidden>
+          {["8 reps", "8 reps", "Log set"].map((set, i) => (
+            <span
+              key={set}
+              className={cn(
+                "flex h-6 flex-1 items-center justify-center gap-1 rounded-lg text-[9px] font-semibold",
+                i < 2
+                  ? "bg-primary/15 text-primary"
+                  : "bg-primary text-primary-foreground",
+              )}
+            >
+              {i < 2 ? <Check size={9} strokeWidth={3} aria-hidden /> : null}
+              {set}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
 function PhoneMockup() {
   return (
-    <div className="relative w-[260px] sm:w-[290px] mx-auto">
-      {/* Phone frame */}
-      <div
-        className="relative z-10 rounded-[40px] border-4 border-foreground/10 bg-brand-navy overflow-hidden"
-        style={{ aspectRatio: "9/19" }}
-      >
-        {/* Status bar */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <span className="text-[10px] text-white/50 font-mono">9:41</span>
-          <div className="w-16 h-4 rounded-full bg-brand-navy border border-white/10" />
-          <div className="flex gap-1">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={cn(
-                  "w-1 rounded-full bg-white/50",
-                  i === 1 ? "h-2" : i === 2 ? "h-3" : "h-4",
-                )}
-              />
-            ))}
-          </div>
-        </div>
+    <div aria-hidden className="relative mx-auto w-[272px] sm:w-[296px]">
+      {/* Soft brand glow + tilted week card peeking from behind */}
+      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-green-light opacity-60 blur-3xl" />
+      <div className="absolute inset-0 translate-x-5 translate-y-3 rotate-[5deg] rounded-[48px] border border-border bg-brand-sky-light/70" />
 
-        {/* App content */}
-        <div className="px-4 pb-4 space-y-3">
-          <div className="pt-1">
-            <p className="text-white/50 text-xs">Good morning</p>
-            <p className="text-white text-base font-semibold">
-              Ready for day 3? 💪
-            </p>
+      {/* Phone bezel + side buttons */}
+      <div className="absolute top-28 -right-[2px] h-16 w-[3px] rounded-full bg-foreground/70" />
+      <div className="absolute top-24 -left-[2px] h-10 w-[3px] rounded-full bg-foreground/70" />
+      <div className="absolute top-36 -left-[2px] h-10 w-[3px] rounded-full bg-foreground/70" />
+      <div className="relative z-10 rounded-[46px] bg-foreground p-[9px]">
+        <div
+          className="relative flex flex-col overflow-hidden rounded-[38px] bg-background"
+          style={{ aspectRatio: "9/19" }}
+        >
+          {/* Status bar + dynamic island */}
+          <div className="relative flex items-center justify-between px-6 pt-3.5">
+            <span className="text-[10px] font-semibold text-foreground">
+              9:41
+            </span>
+            <span className="absolute top-2.5 left-1/2 h-[18px] w-16 -translate-x-1/2 rounded-full bg-foreground" />
+            <span className="flex items-center gap-1 text-foreground">
+              <Wifi size={11} aria-hidden />
+              <BatteryFull size={14} aria-hidden />
+            </span>
           </div>
 
-          {/* Today card */}
-          <div className="rounded-2xl bg-primary p-3 space-y-2">
-            <div className="flex items-center justify-between">
+          {/* App header */}
+          <div className="flex items-center justify-between px-4 pt-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                A
+              </span>
               <div>
-                <p className="text-primary-foreground/70 text-[10px] font-medium">
-                  TODAY'S SESSION
+                <p className="text-[10px] leading-tight text-muted-foreground">
+                  Tuesday · Day 3
                 </p>
-                <p className="text-primary-foreground text-sm font-semibold">
-                  Upper Body Power
+                <p className="text-[13px] leading-tight font-semibold">
+                  Morning, Alex
                 </p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                <Play size={12} className="text-primary-foreground ml-0.5" />
               </div>
             </div>
-            <div className="flex gap-2">
-              {["45 min", "6 ex.", "Mod"].map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[9px] font-medium bg-primary-foreground/15 text-primary-foreground rounded-full px-2 py-0.5"
-                >
-                  {tag}
+            <span className="flex items-center gap-1 rounded-full bg-brand-coral-light px-2 py-1 text-[10px] font-bold text-accent">
+              <Flame size={11} aria-hidden /> 12
+            </span>
+          </div>
+
+          {/* Today's session — mirrors the app's TodayCard */}
+          <div className="px-4 pt-3">
+            <div className="rounded-2xl bg-primary p-3.5 text-primary-foreground">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-[9px] font-semibold tracking-wider text-primary-foreground/70 uppercase">
+                    Today&apos;s session
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold">
+                    Upper body strength
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-primary-foreground/80">
+                    45 min · 2 of 4 exercises done
+                  </p>
+                </div>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-foreground text-primary">
+                  <Play size={14} className="ml-0.5 fill-current" aria-hidden />
                 </span>
-              ))}
+              </div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-primary-foreground/25">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "50%" }}
+                  transition={{ duration: 0.9, delay: 0.7, ease: "easeOut" }}
+                  className="h-full rounded-full bg-primary-foreground"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Week strip */}
+          <div className="flex items-center justify-between px-5 pt-3">
             {[
-              { label: "This week", value: "3 / 4", color: "text-primary" },
-              { label: "Streak", value: "12 days 🔥", color: "text-accent" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="rounded-xl bg-white/5 border border-white/10 p-2"
-              >
-                <p className="text-[9px] text-white/40">{s.label}</p>
-                <p className={cn("text-xs font-semibold", s.color)}>
-                  {s.value}
-                </p>
-              </div>
+              { id: "mon", d: "M", n: 1, done: true },
+              { id: "tue", d: "T", n: 2, done: true },
+              { id: "wed", d: "W", n: 3, done: false, today: true },
+              { id: "thu", d: "T", n: 4, done: false },
+              { id: "fri", d: "F", n: 5, done: false },
+              { id: "sat", d: "S", n: 6, done: false },
+              { id: "sun", d: "S", n: 7, done: false, rest: true },
+            ].map((day) => (
+              <span key={day.id} className="flex flex-col items-center gap-1">
+                <span className="text-[9px] font-medium text-muted-foreground">
+                  {day.d}
+                </span>
+                <span
+                  className={cn(
+                    "flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold",
+                    day.done
+                      ? "bg-primary text-primary-foreground"
+                      : day.today
+                        ? "border-2 border-primary text-primary"
+                        : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {day.done ? (
+                    <Check size={10} strokeWidth={3} aria-hidden />
+                  ) : day.rest ? (
+                    "–"
+                  ) : (
+                    day.n
+                  )}
+                </span>
+              </span>
             ))}
           </div>
 
-          {/* Exercise list */}
-          <div className="space-y-1.5">
-            {["Bench Press", "Overhead Press", "Lat Pulldown"].map((ex, i) => (
-              <div
-                key={ex}
-                className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-2.5 py-2"
+          {/* Exercises */}
+          <ul className="space-y-1.5 px-4 pt-3">
+            {MOCK_EXERCISES.map((exercise) => (
+              <MockExerciseRow key={exercise.name} exercise={exercise} />
+            ))}
+          </ul>
+
+          {/* Bottom nav */}
+          <div className="mt-auto flex items-center justify-around border-t border-border bg-card px-2 pt-2 pb-4">
+            {[
+              { icon: Home, label: "Today", active: true },
+              { icon: CalendarDays, label: "Week", active: false },
+              { icon: MessageCircle, label: "Coach", active: false },
+              { icon: User, label: "Profile", active: false },
+            ].map((item) => (
+              <span
+                key={item.label}
+                className={cn(
+                  "flex flex-col items-center gap-0.5",
+                  item.active ? "text-primary" : "text-muted-foreground",
+                )}
               >
-                <div
-                  className={cn(
-                    "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                    i === 0 ? "bg-primary" : "bg-white/20",
-                  )}
-                />
-                <p className="text-white/70 text-[10px] font-medium flex-1 truncate">
-                  {ex}
-                </p>
-                <p className="text-white/30 text-[9px]">4×10</p>
-              </div>
+                <span className="relative">
+                  <item.icon size={17} aria-hidden />
+                  {item.label === "Coach" ? (
+                    <span className="absolute -top-0.5 -right-1 h-1.5 w-1.5 rounded-full bg-accent" />
+                  ) : null}
+                </span>
+                <span className="text-[8px] font-semibold">{item.label}</span>
+              </span>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Floating cards */}
+      {/* Coach note — the product's differentiator, not a vanity stat */}
       <motion.div
-        animate={{ y: [-4, 4, -4] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -left-14 top-16 z-20 rounded-2xl bg-card border border-border px-3 py-2 min-w-[120px]"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
+        className="absolute top-24 -left-3 z-20 w-[168px] sm:-left-16"
       >
-        <div className="flex items-center gap-2">
-          <Flame size={14} className="text-accent" />
-          <div>
-            <p className="text-[9px] text-muted-foreground font-medium">
-              CALORIES
-            </p>
-            <p className="text-sm font-bold text-foreground">847 kcal</p>
+        <motion.div
+          animate={{ y: [-3, 3, -3] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="rounded-xl border border-border bg-card p-3"
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-green-light text-primary">
+              <Sparkles size={11} aria-hidden />
+            </span>
+            <p className="text-[10px] font-bold">Your coach</p>
           </div>
-        </div>
+          <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">
+            Bench moved well last week — try{" "}
+            <span className="font-semibold text-foreground">62.5 kg</span> on
+            the last set.
+          </p>
+        </motion.div>
       </motion.div>
 
+      {/* PR toast */}
       <motion.div
-        animate={{ y: [4, -4, 4] }}
-        transition={{
-          duration: 3.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 0.5,
-        }}
-        className="absolute -right-10 top-32 z-20 rounded-2xl bg-card border border-border px-3 py-2"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 1.1 }}
+        className="absolute -right-3 bottom-28 z-20 sm:-right-12"
       >
-        <div className="flex items-center gap-1.5">
-          <div className="w-5 h-5 rounded-full bg-brand-green-light flex items-center justify-center">
-            <CheckCircle2 size={12} className="text-primary" />
-          </div>
-          <div>
-            <p className="text-[9px] text-muted-foreground">Streak</p>
-            <p className="text-xs font-bold">23 days</p>
-          </div>
-        </div>
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [-3, 5, -3] }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1,
-        }}
-        className="absolute -left-10 bottom-20 z-20 rounded-2xl bg-primary px-3 py-2"
-      >
-        <p className="text-[9px] text-primary-foreground/70 font-medium">
-          STRENGTH GAIN
-        </p>
-        <p className="text-sm font-bold text-primary-foreground">+18% ↑</p>
+        <motion.div
+          animate={{ y: [3, -3, 3] }}
+          transition={{
+            duration: 4.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.6,
+          }}
+          className="flex items-center gap-2 rounded-xl border border-border bg-card py-2 pr-3 pl-2"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-coral-light text-accent">
+            <Trophy size={14} aria-hidden />
+          </span>
+          <span>
+            <span className="block text-[9px] font-medium text-muted-foreground">
+              New personal best
+            </span>
+            <span className="block text-[11px] font-bold">
+              Bench press · 62.5 kg × 8
+            </span>
+          </span>
+        </motion.div>
       </motion.div>
     </div>
   );
@@ -367,107 +530,6 @@ function StatCard({ value, label, icon, delay }: StatCardProps) {
       <p className="text-3xl font-bold tracking-tight">{value}</p>
       <p className="text-sm text-muted-foreground">{label}</p>
     </motion.div>
-  );
-}
-
-/* ─── Navbar ─── */
-function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-        {/* Logo */}
-        <Link href="/" className="flex items-center">
-          <FitFlowLogo size={32} priority />
-        </Link>
-
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link}
-              href={`/${link.toLowerCase()}`}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
-            >
-              {link}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Actions */}
-        <div className="hidden md:flex items-center gap-2">
-          <Link
-            href="/sign-in"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "rounded-full px-4",
-            )}
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/sign-up"
-            className={cn(
-              buttonVariants({ size: "sm" }),
-              "rounded-full px-5 font-semibold",
-            )}
-          >
-            Get started free
-          </Link>
-        </div>
-
-        {/* Mobile menu toggle */}
-        <button
-          onClick={() => setMenuOpen((o) => !o)}
-          className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Toggle menu"
-        >
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-
-      {/* Mobile menu */}
-      {menuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.15 }}
-          className="md:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-4 space-y-1"
-        >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link}
-              href={`/${link.toLowerCase()}`}
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              {link}
-            </Link>
-          ))}
-          <div className="pt-2 flex flex-col gap-2">
-            <Link
-              href="/sign-in"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "rounded-full h-11 w-full",
-              )}
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/sign-up"
-              className={cn(
-                buttonVariants(),
-                "rounded-full h-11 w-full font-semibold",
-              )}
-            >
-              Get started free
-            </Link>
-          </div>
-        </motion.div>
-      )}
-    </header>
   );
 }
 
@@ -826,7 +888,6 @@ function Footer() {
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       <main className="flex-1">
         <Hero />
         <StatsBar />
