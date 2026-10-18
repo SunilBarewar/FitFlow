@@ -1,5 +1,7 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
+import { TextStreamChatTransport } from "ai";
 import {
   AlertCircle,
   CalendarRange,
@@ -8,7 +10,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "@/components/ui/fit-toaster";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
 import { ChatMessageRow, TypingIndicator } from "./chat-message";
 
@@ -28,10 +31,39 @@ export function ChatPanel({
 }: {
   conversation: ReturnType<typeof useChatConversation>;
 }) {
-  const { messages, isTyping, startSuggestion, sendFreeText } = conversation;
+  const { messages, isTyping, startSuggestion, syncRealMessage } = conversation;
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const isIdle = !messages.some((m) => m.block && !m.resolved);
+
+  const transport = useMemo(
+    () => new TextStreamChatTransport({ api: "/api/coach/chat" }),
+    [],
+  );
+  const realChat = useChat({ transport });
+  const isRealAgentWaiting = realChat.status === "submitted";
+
+  useEffect(() => {
+    for (const message of realChat.messages) {
+      const text = message.parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("");
+      if (!text) continue;
+      syncRealMessage(
+        message.id,
+        message.role === "user" ? "user" : "assistant",
+        text,
+      );
+    }
+  }, [realChat.messages, syncRealMessage]);
+
+  useEffect(() => {
+    if (!realChat.error) return;
+    toast.error("Your coach couldn't respond", {
+      description: realChat.error.message || "Please try again.",
+    });
+  }, [realChat.error]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run on new messages or typing-indicator changes, both of which grow the scroll height.
   useEffect(() => {
@@ -39,14 +71,14 @@ export function ChatPanel({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages.length, isTyping]);
+  }, [messages.length, isTyping, isRealAgentWaiting]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
     if (!text) return;
     setDraft("");
-    sendFreeText(text);
+    realChat.sendMessage({ text });
   }
 
   return (
@@ -61,7 +93,9 @@ export function ChatPanel({
                 conversation={conversation}
               />
             ))}
-            {isTyping ? <TypingIndicator key="typing" /> : null}
+            {isTyping || isRealAgentWaiting ? (
+              <TypingIndicator key="typing" />
+            ) : null}
           </AnimatePresence>
 
           {isIdle && !isTyping ? (

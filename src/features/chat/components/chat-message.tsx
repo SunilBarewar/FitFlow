@@ -15,6 +15,7 @@ import {
   SafetyNoticeBlock,
   UrgentCareBlock,
 } from "./blocks/safety-blocks";
+import { ChatMarkdown } from "./chat-markdown";
 
 type Conversation = ReturnType<typeof useChatConversation>;
 
@@ -52,7 +53,7 @@ export function ChatMessageRow({
                 : "rounded-tl-sm bg-muted text-foreground",
             )}
           >
-            {message.text}
+            {isUser ? message.text : <ChatMarkdown content={message.text} />}
           </div>
         ) : null}
         {message.block ? (

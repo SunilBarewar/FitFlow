@@ -483,20 +483,20 @@ export function useChatConversation(userName: string) {
     [appendAssistant, appendUser, resolveBlock],
   );
 
-  const sendFreeText = useCallback(
-    (text: string) => {
-      appendUser(text);
-      if (flow === "idle") {
-        appendAssistant({
-          text: "Got it — this demo focuses on a few guided journeys. Try one of the prompts below so I can show the full experience.",
-        });
-      } else {
-        appendAssistant({
-          text: "I'd love to hear more, but for this demo please choose one of the options above so I can keep the plan accurate.",
-        });
-      }
+  const syncRealMessage = useCallback(
+    (id: string, role: "user" | "assistant", text: string) => {
+      setMessages((prev) => {
+        const index = prev.findIndex((m) => m.id === id);
+        if (index === -1) {
+          return [...prev, { id, role, text }];
+        }
+        if (prev[index].text === text) return prev;
+        const next = [...prev];
+        next[index] = { ...next[index], text };
+        return next;
+      });
     },
-    [flow, appendUser, appendAssistant],
+    [],
   );
 
   const setPanelTab = useCallback((tab: PanelTab) => {
@@ -515,7 +515,7 @@ export function useChatConversation(userName: string) {
     declinePlan,
     startAdjustedWorkout,
     keepOriginalWorkout,
-    sendFreeText,
+    syncRealMessage,
     setPanelTab,
   };
 }

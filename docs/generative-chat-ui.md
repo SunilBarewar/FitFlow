@@ -27,13 +27,49 @@ FitFlow has four primary destinations:
 - **Progress** — completed sessions, consistency, exercise trends, and weekly reviews.
 - **Profile** — stable goals, equipment, availability, preferences, and limitations.
 
-The **Coach** screen is the home screen. It has three stacked regions:
+The **Coach** screen is the home screen. The user should not choose between “dashboard mode” and “chat mode.” Chat is the control layer for the visible plan and progress surfaces: picking a suggestion or answering a question in chat is what drives what the plan/progress surface shows next, live, without navigating anywhere.
 
-1. **Persistent context bar** — current goal, plan status, and a lightweight profile-completeness indicator.
-2. **Pinned active card** — today’s workout, a plan preview, a requested recommendation, or a review summary, depending on state.
-3. **Conversation feed and composer** — natural language messages plus assistant-generated interactive cards.
+### Final layout decision: one surface, two responsive arrangements
 
-The user should not choose between “dashboard mode” and “chat mode.” Chat is the control layer for the visible plan and progress surfaces.
+Rather than a literal fixed 50/50 split or two separate screens, Coach is a single component tree with state (`CoachContext`, the rendered `UiBlock`s, and the live plan/progress snapshot) that renders into one of two arrangements depending on viewport width. Same state, same server contract — only the arrangement changes.
+
+**Desktop / tablet (≥ ~1024px) — true split pane:**
+
+```
+┌───────────────────────┬─────────────────────┐
+│ Context bar (goal, streak, profile ring)    │
+├───────────────────────┼─────────────────────┤
+│                       │ Today | Plan | Progress │
+│   Chat feed +         │─────────────────────│
+│   composer            │ Live panel content:  │
+│   (control layer)     │ today's workout,     │
+│                       │ plan preview, or     │
+│                       │ progress — updates   │
+│                       │ live as chat answers │
+│                       │ are given            │
+└───────────────────────┴─────────────────────┘
+```
+
+The right pane is always visible. When an answer in chat changes what the user should see (a plan is generated, today’s session is adjusted, the user asks about progress), the pane switches tab and shows a brief highlight pulse on the tab that changed — the “live” feeling is the point of choosing this layout over two separate screens.
+
+**Mobile (< 1024px) — stacked, with the live panel as a bottom sheet:**
+
+```
+┌─────────────────────────┐
+│ Context bar              │
+├─────────────────────────┤
+│ Compact pinned summary   │  ← tap to expand
+│ (today's workout / plan  │
+│  name / streak — whatever│
+│  tab is currently “live”)│
+├─────────────────────────┤
+│ Chat feed + composer     │
+└─────────────────────────┘
+```
+
+Tapping the pinned summary opens the same Today/Plan/Progress panel as a full-screen bottom sheet. A literal two-column split doesn’t work at phone width (both panes become too narrow to use), so mobile keeps chat as the primary surface and treats the live panel as on-demand detail, one tap away — never a separate screen requiring navigation.
+
+Implemented in `src/components/coach/coach-shell.tsx` (the responsive switch), `live-panel.tsx` (the Today/Plan/Progress tabs, shared by both arrangements), and `mobile-pinned-card.tsx` (the mobile summary + bottom sheet).
 
 ## Generative UI model
 
@@ -547,3 +583,7 @@ Defer:
 ## Final decision
 
 FitFlow should be a **structured coaching conversation**: a user says what they need in natural language, the agent asks only the next useful question, and the interface turns the answer into an easy visible action. This combines the warmth and flexibility of chat with the clarity, trust, and speed of a dedicated fitness product.
+
+Concretely, this means a single Coach surface — chat as the control layer, a live Today/Plan/Progress panel beside it on desktop and one tap away on mobile — rather than either a chat-only product or a separate dashboard the user has to navigate to. See “Final layout decision” above for the responsive arrangement.
+
+**Status:** this layout is built as a UI/UX prototype against mock data at `src/app/(app)/chat/page.tsx` and `src/components/coach/**`, covering the plan-creation, lighter-today, back-pain-screening, and progress-check-in journeys described above. It is not yet wired to the real Coach Agent, MongoDB exercise retrieval, or persistence — see “MVP scope” for what real-data work remains.
