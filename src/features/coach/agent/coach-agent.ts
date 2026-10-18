@@ -21,7 +21,7 @@ const openai = createOpenAI({
 
 export const coachAgent = new ToolLoopAgent({
 
-  model: openai("gpt-4.1"),
+  model: openai("gpt-5.1"),
   instructions: COACH_INSTRUCTIONS,
   tools: coachTools,
 });

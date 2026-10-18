@@ -33,10 +33,14 @@ export const WidgetSchema = z.discriminatedUnion("type", [
     .describe(
       "Call after experience and muscle_focus in plan setup when you need where they train most weeks (gym vs home) or specific equipment. Never use choice_chips for gym/home. The UI owns all options.",
     ),
-  z.object({
-    type: z.literal("choice_chips"),
-    options: z.array(ChoiceOptionSchema).min(2).max(6),
-  }),
+  z
+    .object({
+      type: z.literal("choice_chips"),
+      options: z.array(ChoiceOptionSchema).min(2).max(6),
+    })
+    .describe(
+      "Single-choice chips. For unknown session length use exactly four options: 20–30 min, 30–45 min, 45–60 min, 60–90 min. Skip this if they already named a time. Never use this for weekly splits. Other uses: yes/no. Labels only, no description.",
+    ),
   z.object({
     type: z.literal("multi_select_chips"),
     options: z.array(ChoiceOptionSchema).min(2).max(8),
