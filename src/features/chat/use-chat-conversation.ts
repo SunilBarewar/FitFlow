@@ -6,9 +6,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ChatBlock,
   ChatMessage,
+  DayLog,
+  ExerciseLogStatus,
   PanelTab,
   Plan,
-  ProgressStats,
   TodayWorkout,
 } from "./types";
 
@@ -16,16 +17,7 @@ type PanelState = {
   tab: PanelTab;
   plan: Plan | null;
   today: TodayWorkout | null;
-  progress: ProgressStats;
   highlightTab: PanelTab | null;
-};
-
-const EMPTY_PROGRESS: ProgressStats = {
-  streakDays: 0,
-  weeklyCompleted: 0,
-  weeklyTarget: 0,
-  totalWorkouts: 0,
-  recentSessions: [],
 };
 
 type DataWidgetPart = { type: "data-widget"; data: ChatBlock };
@@ -41,8 +33,21 @@ type StoredMessage = {
   block?: ChatBlock;
 };
 
+/** The client's notion of "today" — a (date, weekday) pair sent to the
+ * server with every log write/read so stats are computed against exactly
+ * what the UI itself treats as today. */
+function getTodayRef(): { date: string; dayLabel: string } {
+  const now = new Date();
+  return {
+    date: now.toISOString().slice(0, 10),
+    dayLabel: now.toLocaleDateString("en-US", { weekday: "long" }),
+  };
+}
+
 function todayFromPlan(plan: Plan): TodayWorkout {
-  const day = plan.days.find((item) => item.exercises.length > 0);
+  const todayName = getTodayRef().dayLabel;
+  const day =
+    plan.days.find((item) => item.label === todayName) ?? plan.days[0];
   if (!day) {
     return {
       dayLabel: "Today",
@@ -87,54 +92,50 @@ export function useChatConversation(userName: string) {
   );
   const realChat = useChat({ transport });
   const { setMessages } = realChat;
+  /** Bumped when history hydration should be ignored (e.g. after starting a new chat). */
+  const historyEpoch = useRef(0);
 
   const [hasPlan, setHasPlan] = useState(false);
   const [startNewChatPending, setStartNewChatPending] = useState(false);
+  const [todayLog, setDayLog] = useState<DayLog | null>(null);
   const [panel, setPanel] = useState<PanelState>({
     tab: "today",
     plan: null,
     today: null,
-    progress: EMPTY_PROGRESS,
     highlightTab: null,
   });
 
   useEffect(() => {
     let cancelled = false;
 
+    const epochAtStart = historyEpoch.current;
+
     async function loadConversation() {
       try {
-        const response = await fetch("/api/coach/conversation");
+        const { date, dayLabel } = getTodayRef();
+        const response = await fetch(
+          `/api/coach/conversation?date=${date}&dayLabel=${encodeURIComponent(dayLabel)}`,
+        );
         if (!response.ok || cancelled) return;
 
         const data = (await response.json()) as {
           hasPlan: boolean;
           activePlan: Plan | null;
-          progress: ProgressStats | null;
+          todayLog: DayLog | null;
           messages: StoredMessage[];
         };
 
-        if (cancelled) return;
+        if (cancelled || epochAtStart !== historyEpoch.current) return;
 
         setHasPlan(Boolean(data.hasPlan && data.activePlan));
+        setDayLog(data.todayLog ?? null);
 
-        if (data.hasPlan && data.activePlan) {
-          const plan = data.activePlan;
-          setPanel((prev) => ({
-            ...prev,
-            plan,
-            today: todayFromPlan(plan),
-            progress: {
-              ...EMPTY_PROGRESS,
-              ...data.progress,
-              weeklyTarget: data.progress?.weeklyTarget || plan.daysPerWeek,
-            },
-          }));
-        } else if (data.progress) {
-          setPanel((prev) => ({
-            ...prev,
-            progress: { ...EMPTY_PROGRESS, ...data.progress },
-          }));
-        }
+        const plan = data.hasPlan ? data.activePlan : null;
+        setPanel((prev) => ({
+          ...prev,
+          plan: plan ?? prev.plan,
+          today: plan ? todayFromPlan(plan) : prev.today,
+        }));
 
         if (data.messages.length > 0) {
           setMessages(storedMessagesToUi(data.messages));
@@ -168,10 +169,6 @@ export function useChatConversation(userName: string) {
         ...prev,
         plan,
         today: todayFromPlan(plan),
-        progress: {
-          ...prev.progress,
-          weeklyTarget: plan.daysPerWeek,
-        },
       }));
     }
   }, [realChat.messages]);
@@ -243,6 +240,36 @@ export function useChatConversation(userName: string) {
     highlightPanel("plan");
   }, [highlightPanel]);
 
+  const setExerciseLog = useCallback(
+    (exerciseId: string, status: ExerciseLogStatus, note?: string) => {
+      const dayLabel = panel.today?.dayLabel;
+      if (!dayLabel) return;
+      const { date } = getTodayRef();
+
+      setDayLog((prev) => {
+        const sameDay = prev?.date === date && prev?.dayLabel === dayLabel;
+        const entries = sameDay ? [...prev.entries] : [];
+        const index = entries.findIndex(
+          (entry) => entry.exerciseId === exerciseId,
+        );
+        const nextEntry = { exerciseId, status, note };
+        if (index >= 0) {
+          entries[index] = nextEntry;
+        } else {
+          entries.push(nextEntry);
+        }
+        return { date, dayLabel, entries };
+      });
+
+      void fetch("/api/coach/today-log", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, dayLabel, exerciseId, status, note }),
+      });
+    },
+    [panel.today?.dayLabel],
+  );
+
   const startAdjustedWorkout = useCallback(
     (toMinutes: number, fromEquipment: string, toEquipment: string) => {
       setPanel((prev) => ({
@@ -274,17 +301,25 @@ export function useChatConversation(userName: string) {
     setPanel((prev) => ({ ...prev, tab, highlightTab: null }));
   }, []);
 
-  const startNewChat = useCallback(async () => {
+  const startNewChat = useCallback(async (): Promise<boolean> => {
     setStartNewChatPending(true);
+    historyEpoch.current += 1;
+    realChat.stop();
+    realChat.clearError();
     try {
-      await fetch("/api/coach/conversation", { method: "DELETE" });
+      const response = await fetch("/api/coach/conversation", {
+        method: "DELETE",
+      });
+      if (!response.ok) return false;
       setMessages([]);
+      syncedPlanBlockIds.current.clear();
+      return true;
     } catch {
-      setMessages([]);
+      return false;
     } finally {
       setStartNewChatPending(false);
     }
-  }, [setMessages]);
+  }, [realChat, setMessages]);
 
   return {
     userName,
@@ -294,6 +329,8 @@ export function useChatConversation(userName: string) {
     isWaiting,
     error: realChat.error,
     panel,
+    todayLog,
+    setExerciseLog,
     startSuggestion,
     sendText,
     selectChoice,

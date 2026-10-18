@@ -12,6 +12,7 @@ export type ExerciseRecord = {
   secondaryMuscles: string[];
   category: string;
   instructions: string[];
+  images: string[];
 };
 
 let cache: ExerciseRecord[] | null = null;
@@ -38,6 +39,10 @@ const HIGH_IMPACT_CATEGORIES = new Set([
   "olympic weightlifting",
   "strongman",
 ]);
+
+export function getExerciseById(id: string): ExerciseRecord | undefined {
+  return loadCatalog().find((exercise) => exercise.id === id);
+}
 
 export function searchExercises(
   filters: ExerciseSearchFilters = {},

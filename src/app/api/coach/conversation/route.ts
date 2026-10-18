@@ -1,24 +1,30 @@
 import { Types } from "mongoose";
-import { connectDB } from "@/lib/db";
+import type { DayLog, Plan } from "@/features/chat/types";
 import { getSessionFromCookies } from "@/lib/auth/session";
+import { connectDB } from "@/lib/db";
 import { apiError } from "@/lib/utils/http";
 import { ConversationModel } from "@/models/conversation";
 import { MessageModel } from "@/models/message";
-import type { Plan } from "@/features/chat/types";
 
 /** Number of messages we load into the chat context on page open. */
 const HISTORY_LIMIT = 50;
 
 // ---------------------------------------------------------------------------
-// GET /api/coach/conversation
-// Find-or-create the user's single conversation and return the last 50 messages.
+// GET /api/coach/conversation?date=YYYY-MM-DD&dayLabel=Monday
+// Find-or-create the user's single conversation and return the last 50
+// messages. `date`/`dayLabel` (the client's notion of "today", matching what
+// it also sends to /api/coach/today-log) are used to find today's log entry.
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getSessionFromCookies();
   if (!session) {
     return apiError("You're not signed in.", 401, "UNAUTHORIZED");
   }
+
+  const url = new URL(request.url);
+  const todayDate = url.searchParams.get("date");
+  const todayDayLabel = url.searchParams.get("dayLabel");
 
   await connectDB();
 
@@ -35,11 +41,19 @@ export async function GET() {
     .limit(HISTORY_LIMIT)
     .lean();
 
+  const dailyLogs = (conversation.dailyLogs ?? []) as DayLog[];
+  const todayLog =
+    todayDate && todayDayLabel
+      ? (dailyLogs.find(
+          (log) => log.date === todayDate && log.dayLabel === todayDayLabel,
+        ) ?? null)
+      : null;
+
   return Response.json({
     conversationId: conversation._id.toString(),
     hasPlan: conversation.hasPlan,
     activePlan: conversation.activePlan ?? null,
-    progress: conversation.progress ?? null,
+    todayLog,
     messages: messages.map((m) => ({
       id: m._id.toString(),
       role: m.role,

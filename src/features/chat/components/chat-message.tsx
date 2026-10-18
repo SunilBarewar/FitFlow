@@ -73,13 +73,10 @@ export function ChatMessageRow({
         {message.text ? (
           <div
             className={cn(
-              "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+              "text-sm leading-relaxed",
               isUser
-                ? "rounded-tr-sm bg-primary text-primary-foreground"
-                : cn(
-                    "rounded-tl-sm bg-muted text-foreground",
-                    wide && "self-start",
-                  ),
+                ? "rounded-2xl rounded-tr-sm bg-primary px-3.5 py-2.5 text-primary-foreground"
+                : cn("text-foreground", wide && "self-start"),
             )}
           >
             {isUser ? message.text : <ChatMarkdown content={message.text} />}

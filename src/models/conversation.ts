@@ -12,6 +12,9 @@ const exerciseSchema = new Schema(
     sets: { type: Number, required: true },
     reps: { type: String, required: true },
     equipment: { type: String, required: true },
+    instructions: { type: [String], default: [] },
+    muscles: { type: [String], default: [] },
+    images: { type: [String], default: [] },
   },
   { _id: false },
 );
@@ -39,21 +42,24 @@ const planSchema = new Schema(
   { _id: false },
 );
 
-const recentSessionSchema = new Schema(
+const exerciseLogEntrySchema = new Schema(
   {
-    label: { type: String, required: true },
-    completed: { type: Boolean, required: true },
+    exerciseId: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["pending", "done", "skipped"],
+      default: "pending",
+    },
+    note: { type: String, default: null },
   },
   { _id: false },
 );
 
-const progressSchema = new Schema(
+const dayLogSchema = new Schema(
   {
-    streakDays: { type: Number, default: 0 },
-    weeklyCompleted: { type: Number, default: 0 },
-    weeklyTarget: { type: Number, default: 0 },
-    totalWorkouts: { type: Number, default: 0 },
-    recentSessions: { type: [recentSessionSchema], default: [] },
+    date: { type: String, required: true },
+    dayLabel: { type: String, required: true },
+    entries: { type: [exerciseLogEntrySchema], default: [] },
   },
   { _id: false },
 );
@@ -88,12 +94,11 @@ const conversationSchema = new Schema(
       default: null,
     },
     /**
-     * Minimal progress shell, persisted so the panel survives reloads.
-     * Populated as real workout logging lands; defaults to all-zero.
+     * One entry per calendar date the user marked exercises done/skipped on.
      */
-    progress: {
-      type: progressSchema,
-      default: () => ({}),
+    dailyLogs: {
+      type: [dayLogSchema],
+      default: [],
     },
   },
   { timestamps: true },

@@ -4,6 +4,26 @@ export type Exercise = {
   sets: number;
   reps: string;
   equipment: string;
+  instructions?: string[];
+  muscles?: string[];
+  /** Catalog-relative image paths, e.g. "3_4_Sit-Up/0.jpg" — build the full URL with exerciseImageUrl. */
+  images?: string[];
+};
+
+export type ExerciseLogStatus = "pending" | "done" | "skipped";
+
+export type ExerciseLogEntry = {
+  exerciseId: string;
+  status: ExerciseLogStatus;
+  note?: string;
+};
+
+/** One calendar day's exercise log. Kept per-date so streaks and weekly/total
+ * stats can be computed from history, not just "today". */
+export type DayLog = {
+  date: string;
+  dayLabel: string;
+  entries: ExerciseLogEntry[];
 };
 
 export type PlanDay = {
@@ -23,12 +43,6 @@ export type Plan = {
   days: PlanDay[];
 };
 
-export type LoggedSet = {
-  exerciseId: string;
-  setIndex: number;
-  done: boolean;
-};
-
 export type TodayWorkout = {
   dayLabel: string;
   focus: string;
@@ -42,14 +56,6 @@ export type TodayWorkout = {
   exercises: Exercise[];
 };
 
-export type ProgressStats = {
-  streakDays: number;
-  weeklyCompleted: number;
-  weeklyTarget: number;
-  totalWorkouts: number;
-  recentSessions: { label: string; completed: boolean }[];
-};
-
 export type Profile = {
   name: string;
   goal: string;
@@ -57,7 +63,7 @@ export type Profile = {
   completeness: number;
 };
 
-export type PanelTab = "today" | "plan" | "progress";
+export type PanelTab = "today" | "plan";
 
 export type ChoiceOption = { id: string; label: string; description?: string };
 

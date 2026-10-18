@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ChatBlock } from "@/features/chat/types";
+import { getExerciseById } from "@/lib/exercises/exercise-catalog";
 import { WidgetSchema } from "./widget-schema";
 
 export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
@@ -61,13 +62,19 @@ export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
             id: randomUUID(),
             label: day.label,
             focus: day.focus,
-            exercises: day.exercises.map((exercise) => ({
-              id: exercise.exerciseId,
-              name: exercise.name,
-              sets: exercise.sets,
-              reps: exercise.reps,
-              equipment: exercise.equipment,
-            })),
+            exercises: day.exercises.map((exercise) => {
+              const catalogExercise = getExerciseById(exercise.exerciseId);
+              return {
+                id: exercise.exerciseId,
+                name: exercise.name,
+                sets: exercise.sets,
+                reps: exercise.reps,
+                equipment: exercise.equipment,
+                instructions: catalogExercise?.instructions,
+                muscles: catalogExercise?.primaryMuscles,
+                images: catalogExercise?.images,
+              };
+            }),
           })),
         },
       };

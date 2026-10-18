@@ -124,6 +124,23 @@ export default function ChatPage() {
     );
   }
 
+  async function handleStartNewChat() {
+    const cleared = await conversation.startNewChat();
+    if (cleared) {
+      toast.success("New chat started", {
+        description: "Your plan and progress are still here when you need them.",
+      });
+      document.getElementById("coach-chat-main")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      return;
+    }
+    toast.error("Couldn’t start a new chat", {
+      description: "Please try again.",
+    });
+  }
+
   async function handleSignOut() {
     try {
       await signOut.mutateAsync();
@@ -141,7 +158,7 @@ export default function ChatPage() {
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-background">
       <ContextBar
-        onStartNewChat={() => void conversation.startNewChat()}
+        onStartNewChat={() => void handleStartNewChat()}
         startNewChatPending={conversation.startNewChatPending}
         onSignOut={handleSignOut}
         signOutPending={signOut.isPending}
@@ -156,7 +173,10 @@ export default function ChatPage() {
         </p>
       ) : null}
 
-      <main className="flex min-h-0 flex-1 flex-col">
+      <main
+        id="coach-chat-main"
+        className="flex min-h-0 flex-1 flex-col"
+      >
         <ChatShell conversation={conversation} />
       </main>
     </div>

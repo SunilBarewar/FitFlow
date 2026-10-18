@@ -11,13 +11,11 @@ import {
 import type { PanelTab } from "@/features/chat/types";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
 import { PlanTab } from "./panel/plan-tab";
-import { ProgressTab } from "./panel/progress-tab";
 import { TodayCard } from "./panel/today-card";
 
 const TABS: { id: PanelTab; label: string }[] = [
   { id: "today", label: "Today" },
   { id: "plan", label: "Plan" },
-  { id: "progress", label: "Progress" },
 ];
 
 export function LivePanel({
@@ -25,7 +23,7 @@ export function LivePanel({
 }: {
   conversation: ReturnType<typeof useChatConversation>;
 }) {
-  const { panel, setPanelTab } = conversation;
+  const { panel, setPanelTab, todayLog, setExerciseLog } = conversation;
 
   return (
     <Tabs
@@ -57,17 +55,16 @@ export function LivePanel({
       <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
         <TabsPanel value="today">
           <AnimatedPanelContent active={panel.tab === "today"}>
-            <TodayCard today={panel.today} />
+            <TodayCard
+              today={panel.today}
+              log={todayLog}
+              onSetExerciseLog={setExerciseLog}
+            />
           </AnimatedPanelContent>
         </TabsPanel>
         <TabsPanel value="plan">
           <AnimatedPanelContent active={panel.tab === "plan"}>
-            <PlanTab plan={panel.plan} />
-          </AnimatedPanelContent>
-        </TabsPanel>
-        <TabsPanel value="progress">
-          <AnimatedPanelContent active={panel.tab === "progress"}>
-            <ProgressTab progress={panel.progress} />
+            <PlanTab plan={panel.plan} todayLog={todayLog} />
           </AnimatedPanelContent>
         </TabsPanel>
       </div>

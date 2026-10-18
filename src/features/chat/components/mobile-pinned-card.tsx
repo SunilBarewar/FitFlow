@@ -14,7 +14,6 @@ import { LivePanel } from "./live-panel";
 const TAB_LABEL: Record<PanelTab, string> = {
   today: "Today's workout",
   plan: "Your plan",
-  progress: "Your progress",
 };
 
 export function MobilePinnedCard({
@@ -51,15 +50,9 @@ export function MobilePinnedCard({
               ) : (
                 <p className="text-sm font-semibold">No workout planned yet</p>
               )
-            ) : panel.tab === "plan" ? (
+            ) : (
               <p className="truncate text-sm font-semibold">
                 {panel.plan?.name ?? "No plan yet"}
-              </p>
-            ) : (
-              <p className="text-sm font-semibold">
-                {panel.progress.streakDays}-day streak ·{" "}
-                {panel.progress.weeklyCompleted}/{panel.progress.weeklyTarget}{" "}
-                this week
               </p>
             )}
           </div>

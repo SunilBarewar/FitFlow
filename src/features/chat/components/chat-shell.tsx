@@ -16,7 +16,7 @@ export function ChatShell({
     <div
       className={
         hasPlan
-          ? "flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[1fr_400px]"
+          ? "flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[1fr_440px] xl:grid-cols-[1fr_520px]"
           : "flex min-h-0 flex-1 flex-col"
       }
     >
