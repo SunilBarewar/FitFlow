@@ -1,9 +1,10 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
-import { LogOut, MessageSquarePlus, User, Zap } from "lucide-react";
+import { LogOut, MessageSquarePlus, User } from "lucide-react";
 import Link from "next/link";
 import { cn } from "cn";
+import { FitFlowLogo } from "@/components/brand/fitflow-logo";
 
 const menuItemClass =
   "flex min-h-11 cursor-default items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium outline-none select-none data-highlighted:bg-muted data-highlighted:text-foreground";
@@ -24,15 +25,8 @@ export function ContextBar({
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md pt-safe">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center gap-2"
-          aria-label="FitFlow home"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-            <Zap size={18} className="text-primary-foreground" aria-hidden />
-          </span>
-          <span className="text-base font-bold tracking-tight">FitFlow.</span>
+        <Link href="/" className="flex shrink-0 items-center" aria-label="FitFlow home">
+          <FitFlowLogo size={36} priority />
         </Link>
 
         <Menu.Root modal={false}>

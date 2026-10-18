@@ -5,7 +5,6 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
-  Zap,
   BarChart3,
   CalendarDays,
   CheckCircle2,
@@ -21,6 +20,7 @@ import {
   Repeat2,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { FitFlowLogo } from "@/components/brand/fitflow-logo";
 import { cn } from "@/lib/utils/cn";
 
 /* ─── Types ─── */
@@ -288,11 +288,8 @@ function Navbar() {
     <header className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <Zap size={14} className="text-primary-foreground" />
-          </div>
-          <span className="text-base font-bold tracking-tight">FitFlow.</span>
+        <Link href="/" className="flex items-center">
+          <FitFlowLogo size={32} priority />
         </Link>
 
         {/* Desktop nav */}
@@ -666,12 +663,7 @@ function Footer() {
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-              <Zap size={12} className="text-primary-foreground" />
-            </div>
-            <span className="text-sm font-bold">FitFlow.</span>
-          </div>
+          <FitFlowLogo size={24} />
           <p className="text-xs text-muted-foreground">
             © 2026 FitFlow Inc. All rights reserved.
           </p>

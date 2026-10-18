@@ -1,9 +1,10 @@
 "use client";
 
-import { Heart, Zap } from "lucide-react";
+import { Heart } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { FitFlowLogo } from "@/components/brand/fitflow-logo";
 
 /* ------------------------------------------------------------------ */
 /*  Concept: “A new beginning”                                         */
@@ -376,10 +377,7 @@ export function AuthPanel() {
           className="flex w-fit items-center gap-2.5"
           aria-label="FitFlow home"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-            <Zap size={16} className="text-primary-foreground" aria-hidden />
-          </span>
-          <span className="text-lg font-bold tracking-tight">FitFlow.</span>
+          <FitFlowLogo size={32} />
         </Link>
       </header>
 

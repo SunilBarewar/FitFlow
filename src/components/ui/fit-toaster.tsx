@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  Loader2,
-  Zap,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, Loader2 } from "lucide-react";
+import { FitFlowLogo } from "@/components/brand/fitflow-logo";
 import { Toaster as SonnerToaster, toast as sonnerToast } from "sonner";
 
 function ToastIcon({
@@ -100,9 +95,7 @@ export const toast = {
         className="flex w-full max-w-md items-start gap-3 rounded-xl border border-border bg-card p-4"
         role="status"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Zap size={18} aria-hidden />
-        </span>
+        <FitFlowLogo variant="mark" size={36} className="shrink-0" />
         <div className="min-w-0 flex-1 pt-0.5">
           <p className="text-sm font-semibold leading-snug">
             Welcome back, {name.split(" ")[0]}!

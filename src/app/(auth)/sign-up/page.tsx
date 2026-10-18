@@ -4,14 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Eye,
-  EyeOff,
-  Zap,
-  ArrowRight,
-  CheckCircle2,
-  Check,
-} from "lucide-react";
+import { Eye, EyeOff, ArrowRight, CheckCircle2, Check } from "lucide-react";
+import { FitFlowLogo } from "@/components/brand/fitflow-logo";
 import { Button } from "@/components/ui/button";
 import { useSignUp } from "@/features/auth/hooks/use-sign-up";
 import { getErrorMessage } from "@/features/auth/lib/api-client";
@@ -138,11 +132,8 @@ function SignUpForm() {
   return (
     <div className="flex flex-col justify-center w-full max-w-sm mx-auto py-12 px-4 sm:px-0 space-y-8">
       {/* Mobile logo */}
-      <div className="lg:hidden flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-          <Zap size={14} className="text-primary-foreground" />
-        </div>
-        <span className="text-base font-bold tracking-tight">FitFlow.</span>
+      <div className="lg:hidden flex items-center">
+        <FitFlowLogo size={28} />
       </div>
 
       {/* Step indicator */}

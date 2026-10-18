@@ -17,6 +17,15 @@ export const metadata: Metadata = {
   title: "FitFlow — Train Smart, Live Stronger",
   description:
     "Your AI-powered fitness coach. Build personalized workout plans, track progress, and train smarter with FitFlow.",
+  applicationName: "FitFlow",
+  icons: {
+    icon: [
+      { url: "/brand/fitflow-icon.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [
+      { url: "/brand/fitflow-icon.png", type: "image/png", sizes: "180x180" },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
