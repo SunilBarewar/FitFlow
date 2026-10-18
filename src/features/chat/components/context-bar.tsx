@@ -1,9 +1,9 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
+import { cn } from "cn";
 import { LogOut, MessageSquarePlus, User } from "lucide-react";
 import Link from "next/link";
-import { cn } from "cn";
 import { FitFlowLogo } from "@/components/brand/fitflow-logo";
 
 const menuItemClass =
@@ -25,7 +25,11 @@ export function ContextBar({
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md pt-safe">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center" aria-label="FitFlow home">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center"
+          aria-label="FitFlow home"
+        >
           <FitFlowLogo size={36} priority />
         </Link>
 
@@ -61,7 +65,10 @@ export function ContextBar({
                 </Menu.Item>
                 <Menu.Separator className="my-1 h-px bg-border" />
                 <Menu.Item
-                  className={cn(menuItemClass, "text-destructive data-highlighted:bg-destructive/10")}
+                  className={cn(
+                    menuItemClass,
+                    "text-destructive data-highlighted:bg-destructive/10",
+                  )}
                   disabled={signOutPending}
                   onClick={onSignOut}
                 >

@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ChatBlock,
   ChatMessage,
@@ -42,7 +42,7 @@ type StoredMessage = {
 };
 
 function todayFromPlan(plan: Plan): TodayWorkout {
-  const day = plan.days[0];
+  const day = plan.days.find((item) => item.exercises.length > 0);
   if (!day) {
     return {
       dayLabel: "Today",
@@ -109,6 +109,7 @@ export function useChatConversation(userName: string) {
         const data = (await response.json()) as {
           hasPlan: boolean;
           activePlan: Plan | null;
+          progress: ProgressStats | null;
           messages: StoredMessage[];
         };
 
@@ -123,9 +124,15 @@ export function useChatConversation(userName: string) {
             plan,
             today: todayFromPlan(plan),
             progress: {
-              ...prev.progress,
-              weeklyTarget: plan.daysPerWeek,
+              ...EMPTY_PROGRESS,
+              ...data.progress,
+              weeklyTarget: data.progress?.weeklyTarget || plan.daysPerWeek,
             },
+          }));
+        } else if (data.progress) {
+          setPanel((prev) => ({
+            ...prev,
+            progress: { ...EMPTY_PROGRESS, ...data.progress },
           }));
         }
 
@@ -133,7 +140,7 @@ export function useChatConversation(userName: string) {
           setMessages(storedMessagesToUi(data.messages));
         }
       } catch {
-        // Chat still works without history; panel stays hidden until a plan is accepted.
+        // Chat still works without history; panel stays hidden until a plan exists.
       }
     }
 
@@ -143,6 +150,31 @@ export function useChatConversation(userName: string) {
       cancelled = true;
     };
   }, [setMessages]);
+
+  // Sync the panel as soon as a plan_created block streams in — the plan is
+  // already saved server-side by this point, so there is no explicit accept step.
+  const syncedPlanBlockIds = useRef(new Set<string>());
+  useEffect(() => {
+    for (const message of realChat.messages) {
+      const widgetPart = message.parts.find(isDataWidgetPart);
+      const block = widgetPart?.data;
+      if (!block || block.type !== "plan_created") continue;
+      if (syncedPlanBlockIds.current.has(block.id)) continue;
+      syncedPlanBlockIds.current.add(block.id);
+
+      const plan = block.plan;
+      setHasPlan(true);
+      setPanel((prev) => ({
+        ...prev,
+        plan,
+        today: todayFromPlan(plan),
+        progress: {
+          ...prev.progress,
+          weeklyTarget: plan.daysPerWeek,
+        },
+      }));
+    }
+  }, [realChat.messages]);
 
   const messages: ChatMessage[] = useMemo(
     () =>
@@ -207,33 +239,9 @@ export function useChatConversation(userName: string) {
     sendText("I understand, continue");
   }, [sendText]);
 
-  const acceptPlan = useCallback(
-    (plan: Plan) => {
-      const activated: Plan = { ...plan, status: "active" };
-      setHasPlan(true);
-      setPanel((prev) => ({
-        ...prev,
-        plan: activated,
-        today: todayFromPlan(activated),
-        progress: {
-          ...prev.progress,
-          weeklyTarget: activated.daysPerWeek,
-        },
-      }));
-      highlightPanel("plan");
-      void fetch("/api/coach/conversation", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ activePlan: activated }),
-      });
-      sendText("I accept this plan.");
-    },
-    [highlightPanel, sendText],
-  );
-
-  const declinePlan = useCallback(() => {
-    sendText("Let's change something about this plan first.");
-  }, [sendText]);
+  const viewPlan = useCallback(() => {
+    highlightPanel("plan");
+  }, [highlightPanel]);
 
   const startAdjustedWorkout = useCallback(
     (toMinutes: number, fromEquipment: string, toEquipment: string) => {
@@ -291,8 +299,7 @@ export function useChatConversation(userName: string) {
     selectChoice,
     selectMultiChoice,
     acknowledgeSafety,
-    acceptPlan,
-    declinePlan,
+    viewPlan,
     startAdjustedWorkout,
     keepOriginalWorkout,
     setPanelTab,

@@ -16,32 +16,29 @@ const SUGGESTIONS = [
   {
     icon: Zap,
     label: "Workout for today",
-    prompt:
-      "I'd like a workout for today. Please ask how much time I have, where I'm training, and what equipment I have, then build a session I can start right away.",
+    prompt: "What should I do for a workout today?",
   },
   {
     icon: MessageCircle,
     label: "Ask a fitness question",
-    prompt:
-      "I have a fitness question I'd like your help with. Please ask me what it is, then answer it in simple terms and tell me how I can apply it.",
+    prompt: "I've got a fitness question — can I ask you something?",
   },
   {
     icon: Moon,
     label: "I'm low on energy",
     prompt:
-      "I'm low on energy today, but I still want to do something good for my body. Please ask how I'm feeling, then suggest a lighter session, mobility work, or rest — whatever fits best.",
+      "I'm really low on energy today but I still want to move. What would you suggest?",
   },
   {
     icon: HeartPulse,
     label: "Something hurts",
     prompt:
-      "I have some pain or an old injury that I need to be careful about. Please ask where it is and what makes it worse, then help me train in a way that avoids aggravating it.",
+      "Something's been hurting when I train and I don't want to make it worse.",
   },
   {
     icon: CalendarRange,
     label: "Build a weekly routine",
-    prompt:
-      "I'd like you to build me a weekly workout routine. Please ask about my goal, schedule, experience, and equipment, then create a routine that fits my week.",
+    prompt: "Can you help me set up a weekly workout routine?",
   },
 ] as const;
 
@@ -90,7 +87,7 @@ export function EmptyState({
   }
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-y-auto">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
       {/* Soft tinted backdrop — decoration only, adds no height */}
       <div
         aria-hidden

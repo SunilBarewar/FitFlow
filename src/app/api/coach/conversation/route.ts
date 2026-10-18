@@ -39,6 +39,7 @@ export async function GET() {
     conversationId: conversation._id.toString(),
     hasPlan: conversation.hasPlan,
     activePlan: conversation.activePlan ?? null,
+    progress: conversation.progress ?? null,
     messages: messages.map((m) => ({
       id: m._id.toString(),
       role: m.role,

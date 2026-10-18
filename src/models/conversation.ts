@@ -39,6 +39,25 @@ const planSchema = new Schema(
   { _id: false },
 );
 
+const recentSessionSchema = new Schema(
+  {
+    label: { type: String, required: true },
+    completed: { type: Boolean, required: true },
+  },
+  { _id: false },
+);
+
+const progressSchema = new Schema(
+  {
+    streakDays: { type: Number, default: 0 },
+    weeklyCompleted: { type: Number, default: 0 },
+    weeklyTarget: { type: Number, default: 0 },
+    totalWorkouts: { type: Number, default: 0 },
+    recentSessions: { type: [recentSessionSchema], default: [] },
+  },
+  { _id: false },
+);
+
 // ---------------------------------------------------------------------------
 // Conversation schema — exactly one document per user
 // ---------------------------------------------------------------------------
@@ -67,6 +86,14 @@ const conversationSchema = new Schema(
     activePlan: {
       type: planSchema,
       default: null,
+    },
+    /**
+     * Minimal progress shell, persisted so the panel survives reloads.
+     * Populated as real workout logging lands; defaults to all-zero.
+     */
+    progress: {
+      type: progressSchema,
+      default: () => ({}),
     },
   },
   { timestamps: true },

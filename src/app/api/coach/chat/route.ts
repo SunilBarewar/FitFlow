@@ -136,6 +136,13 @@ export async function POST(request: Request) {
               id: part.toolCallId,
               data: widget,
             });
+
+            if (widget.type === "plan_created") {
+              await ConversationModel.findByIdAndUpdate(conversationId, {
+                hasPlan: true,
+                activePlan: widget.plan,
+              });
+            }
           }
         }
       }

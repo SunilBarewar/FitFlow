@@ -53,19 +53,23 @@ export function PlanTab({ plan }: { plan: Plan | null }) {
             <p className="text-xs font-semibold text-muted-foreground">
               {day.label} · {day.focus}
             </p>
-            <ul className="mt-1.5 space-y-1">
-              {day.exercises.map((exercise) => (
-                <li
-                  key={exercise.id}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span>{exercise.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {exercise.sets} × {exercise.reps}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {day.exercises.length > 0 ? (
+              <ul className="mt-1.5 space-y-1">
+                {day.exercises.map((exercise) => (
+                  <li
+                    key={exercise.id}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span>{exercise.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {exercise.sets} × {exercise.reps}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1.5 text-sm text-muted-foreground">Rest</p>
+            )}
           </li>
         ))}
       </ul>

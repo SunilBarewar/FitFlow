@@ -45,8 +45,11 @@ export function ChatPanel({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-5 sm:px-6"
+      >
         <div className="mx-auto flex max-w-xl flex-col gap-4">
           <AnimatePresence initial={false}>
             {messages.map((message, index) => (

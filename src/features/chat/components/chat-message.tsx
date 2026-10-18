@@ -1,15 +1,19 @@
 "use client";
 
 import { cn } from "cn";
-import { Sparkles } from "lucide-react";
+import { Dumbbell, Flame, Sparkles, Sprout } from "lucide-react";
 import { motion } from "motion/react";
-import type { ChatMessage } from "@/features/chat/types";
+import { EXPERIENCE_OPTIONS } from "@/features/chat/setup-options";
+import type { ChatBlock, ChatMessage } from "@/features/chat/types";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
 import {
   ChoiceChipsBlock,
   MultiSelectChipsBlock,
 } from "./blocks/choice-blocks";
-import { PlanPreviewBlock, SessionMutationBlock } from "./blocks/plan-blocks";
+import { DescribedChoices } from "./blocks/described-choices";
+import { EquipmentBlock } from "./blocks/equipment-block";
+import { MuscleFocusBlock } from "./blocks/muscle-focus-block";
+import { PlanCreatedCard, SessionMutationBlock } from "./blocks/plan-blocks";
 import {
   GentleRoutineBlock,
   SafetyNoticeBlock,
@@ -18,6 +22,19 @@ import {
 import { ChatMarkdown } from "./chat-markdown";
 
 type Conversation = ReturnType<typeof useChatConversation>;
+
+function isWideBlock(block: ChatBlock) {
+  switch (block.type) {
+    case "experience":
+    case "muscle_focus":
+    case "equipment_access":
+      return true;
+    case "choice_chips":
+      return block.options.some((option) => option.description);
+    default:
+      return false;
+  }
+}
 
 export function ChatMessageRow({
   message,
@@ -29,10 +46,10 @@ export function ChatMessageRow({
   interactive: boolean;
 }) {
   const isUser = message.role === "user";
+  const wide = !isUser && message.block && isWideBlock(message.block);
 
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
@@ -44,7 +61,14 @@ export function ChatMessageRow({
         </span>
       ) : null}
       <div
-        className={cn("flex max-w-[85%] flex-col gap-2", isUser && "items-end")}
+        className={cn(
+          "flex min-w-0 flex-col gap-2",
+          isUser
+            ? "max-w-[85%] items-end"
+            : wide
+              ? "w-full flex-1"
+              : "max-w-[85%]",
+        )}
       >
         {message.text ? (
           <div
@@ -52,7 +76,10 @@ export function ChatMessageRow({
               "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
               isUser
                 ? "rounded-tr-sm bg-primary text-primary-foreground"
-                : "rounded-tl-sm bg-muted text-foreground",
+                : cn(
+                    "rounded-tl-sm bg-muted text-foreground",
+                    wide && "self-start",
+                  ),
             )}
           >
             {isUser ? message.text : <ChatMarkdown content={message.text} />}
@@ -90,6 +117,33 @@ function BlockRenderer({
           }
         />
       );
+    case "experience":
+      return (
+        <DescribedChoices
+          options={EXPERIENCE_OPTIONS}
+          icons={{ new: Sprout, returning: Dumbbell, regular: Flame }}
+          resolved={resolved}
+          onSelect={(optionId, label) =>
+            conversation.selectChoice(optionId, label)
+          }
+        />
+      );
+    case "muscle_focus":
+      return (
+        <MuscleFocusBlock
+          blockId={block.id}
+          resolved={resolved}
+          onSubmit={(label) => conversation.selectChoice(block.id, label)}
+        />
+      );
+    case "equipment_access":
+      return (
+        <EquipmentBlock
+          blockId={block.id}
+          resolved={resolved}
+          onSubmit={(label) => conversation.selectChoice(block.id, label)}
+        />
+      );
     case "multi_select_chips":
       return (
         <MultiSelectChipsBlock
@@ -100,13 +154,11 @@ function BlockRenderer({
           }
         />
       );
-    case "plan_preview":
+    case "plan_created":
       return (
-        <PlanPreviewBlock
+        <PlanCreatedCard
           block={block}
-          resolved={resolved}
-          onAccept={() => conversation.acceptPlan(block.plan)}
-          onDecline={() => conversation.declinePlan()}
+          onViewPlan={() => conversation.viewPlan()}
         />
       );
     case "session_mutation":

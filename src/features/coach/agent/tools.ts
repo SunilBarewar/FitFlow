@@ -67,7 +67,7 @@ export const coachTools = {
 
   show_widget: tool({
     description:
-      "Render one structured UI widget in the chat: a question with chips, a plan preview, a session adjustment, a safety notice, a gentle routine, or an urgent-care stop. Call this as the last action in your turn — after calling it, send no further text and no further tool calls this turn.",
+      "Render one structured UI widget. Use experience, muscle_focus, or equipment_access for those setup questions. Session length uses choice_chips with the fixed time ranges from the instructions. Do not ask how many days they train unless they bring up their schedule; then use choice_chips for a day split. Never use the words beginner, intermediate, or expert. Other widgets: multi-select chips, plan preview, session adjustment, safety notice, gentle routine, urgent care. Call this as the last action in your turn — after calling it, send no further text and no further tool calls this turn.",
     inputSchema: z.object({ widget: WidgetSchema }),
     execute: async () => "Widget shown to the user.",
   }),

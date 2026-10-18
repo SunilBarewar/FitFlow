@@ -26,7 +26,7 @@ function ChatSkeleton() {
         </div>
         <div className="h-24 w-full rounded-3xl bg-muted animate-pulse" />
         <div className="flex max-w-xl flex-wrap justify-center gap-2">
-          {["w-40", "w-52", "w-44", "w-40", "w-52"].map((width) => (
+          {["w-40", "w-52", "w-44",  "w-52"].map((width) => (
             <div
               key={width}
               className={`h-11 max-w-full rounded-pill bg-muted animate-pulse ${width}`}
@@ -139,7 +139,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-background">
       <ContextBar
         onStartNewChat={() => void conversation.startNewChat()}
         startNewChatPending={conversation.startNewChatPending}

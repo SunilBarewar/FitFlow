@@ -59,7 +59,7 @@ export type Profile = {
 
 export type PanelTab = "today" | "plan" | "progress";
 
-export type ChoiceOption = { id: string; label: string };
+export type ChoiceOption = { id: string; label: string; description?: string };
 
 export type ChatBlock =
   | {
@@ -72,6 +72,9 @@ export type ChatBlock =
       id: string;
       options: ChoiceOption[];
     }
+  | { type: "experience"; id: string }
+  | { type: "muscle_focus"; id: string }
+  | { type: "equipment_access"; id: string }
   | {
       type: "safety_notice";
       id: string;
@@ -79,7 +82,7 @@ export type ChatBlock =
       acknowledgeLabel: string;
     }
   | {
-      type: "plan_preview";
+      type: "plan_created";
       id: string;
       plan: Plan;
     }

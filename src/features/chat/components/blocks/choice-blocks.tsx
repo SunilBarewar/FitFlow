@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import type { ChatBlock } from "@/features/chat/types";
+import { DescribedChoices } from "./described-choices";
 
 type ChoiceChipsBlock = Extract<ChatBlock, { type: "choice_chips" }>;
 type MultiSelectBlock = Extract<ChatBlock, { type: "multi_select_chips" }>;
@@ -29,6 +30,17 @@ export function ChoiceChipsBlock({
   onSelect: (optionId: string, label: string) => void;
 }) {
   const [clickedId, setClickedId] = useState<string | null>(null);
+  const described = block.options.some((option) => option.description);
+
+  if (described) {
+    return (
+      <DescribedChoices
+        options={block.options}
+        resolved={resolved}
+        onSelect={onSelect}
+      />
+    );
+  }
 
   return (
     <motion.div

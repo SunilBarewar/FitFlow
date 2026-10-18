@@ -1,26 +1,26 @@
 "use client";
 
-import { motion } from "motion/react";
-import { useState } from "react";
-import Link from "next/link";
 import {
+  Activity,
   ArrowRight,
   BarChart3,
   CalendarDays,
   CheckCircle2,
-  Play,
-  Star,
-  Activity,
-  Flame,
-  Dumbbell,
-  Target,
-  Menu,
-  X,
   ClipboardList,
+  Dumbbell,
+  Flame,
+  Menu,
+  Play,
   Repeat2,
+  Star,
+  Target,
+  X,
 } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { motion } from "motion/react";
+import Link from "next/link";
+import { useState } from "react";
 import { FitFlowLogo } from "@/components/brand/fitflow-logo";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
 /* ─── Types ─── */
@@ -47,7 +47,7 @@ const FEATURES = [
     icon: <ClipboardList size={22} />,
     title: "Workout Plans",
     description:
-      "Get a weekly plan built around your schedule, equipment, and experience level — not a generic 12-week program.",
+      "Get a weekly plan built around your schedule, your equipment, and how training has actually been going.",
     tint: "bg-brand-green-light text-primary",
     delay: 0.1,
   },
@@ -94,37 +94,67 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: "50K+", label: "Active athletes", icon: <Activity size={18} />, delay: 0 },
-  { value: "2.1M", label: "Workouts logged", icon: <Dumbbell size={18} />, delay: 0.1 },
-  { value: "94%", label: "Goal completion", icon: <Target size={18} />, delay: 0.2 },
+  {
+    value: "50K+",
+    label: "Active athletes",
+    icon: <Activity size={18} />,
+    delay: 0,
+  },
+  {
+    value: "2.1M",
+    label: "Workouts logged",
+    icon: <Dumbbell size={18} />,
+    delay: 0.1,
+  },
+  {
+    value: "94%",
+    label: "Goal completion",
+    icon: <Target size={18} />,
+    delay: 0.2,
+  },
   { value: "4.9★", label: "User rating", icon: <Star size={18} />, delay: 0.3 },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: "I've tried every fitness app. FitFlow is the first that actually felt personal — it knew I only had 30 minutes and built around that.",
+    quote:
+      "I've tried every fitness app. FitFlow is the first that actually felt personal — it knew I only had 30 minutes and built around that.",
     name: "Marcus R.",
-    role: "Intermediate lifter · 8 months",
+    role: "Trains 4 days a week · 8 months",
     avatar: "MR",
   },
   {
-    quote: "The weekly overview and session logging made me consistent for the first time ever. I've hit my plan 11 weeks in a row.",
+    quote:
+      "The weekly overview and session logging made me consistent for the first time ever. I've hit my plan 11 weeks in a row.",
     name: "Priya S.",
-    role: "Beginner · 3 months",
+    role: "Just getting started · 3 months",
     avatar: "PS",
   },
   {
-    quote: "My bench went from 80kg to 110kg in 6 months. Seeing the progress charts every week kept me pushing when I wanted to stop.",
+    quote:
+      "My bench went from 80kg to 110kg in 6 months. Seeing the progress charts every week kept me pushing when I wanted to stop.",
     name: "James T.",
-    role: "Advanced · 1 year",
+    role: "Trains regularly · 1 year",
     avatar: "JT",
   },
 ];
 
 const STEPS = [
-  { n: "01", title: "Set up your profile", body: "Tell FitFlow your goal, how many days you can train, what equipment you have, and your experience level." },
-  { n: "02", title: "Get your weekly plan", body: "A tailored plan drops straight into your calendar — workouts mapped to your actual schedule, not a generic template." },
-  { n: "03", title: "Train, log, and grow", body: "Follow your sessions, log every set as you go, swap exercises when needed, and watch your strength trend upward." },
+  {
+    n: "01",
+    title: "Set up your profile",
+    body: "Tell FitFlow your goal, what you have to work with, and how training has been going. The week starts as five training days and two rest days.",
+  },
+  {
+    n: "02",
+    title: "Get your weekly plan",
+    body: "A tailored plan drops straight into your calendar — workouts mapped to your actual schedule, not a generic template.",
+  },
+  {
+    n: "03",
+    title: "Train, log, and grow",
+    body: "Follow your sessions, log every set as you go, swap exercises when needed, and watch your strength trend upward.",
+  },
 ];
 
 /* ─── Floating phone mockup ─── */
@@ -132,14 +162,23 @@ function PhoneMockup() {
   return (
     <div className="relative w-[260px] sm:w-[290px] mx-auto">
       {/* Phone frame */}
-      <div className="relative z-10 rounded-[40px] border-4 border-foreground/10 bg-brand-navy overflow-hidden" style={{ aspectRatio: "9/19" }}>
+      <div
+        className="relative z-10 rounded-[40px] border-4 border-foreground/10 bg-brand-navy overflow-hidden"
+        style={{ aspectRatio: "9/19" }}
+      >
         {/* Status bar */}
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <span className="text-[10px] text-white/50 font-mono">9:41</span>
           <div className="w-16 h-4 rounded-full bg-brand-navy border border-white/10" />
           <div className="flex gap-1">
             {[1, 2, 3].map((i) => (
-              <div key={i} className={cn("w-1 rounded-full bg-white/50", i === 1 ? "h-2" : i === 2 ? "h-3" : "h-4")} />
+              <div
+                key={i}
+                className={cn(
+                  "w-1 rounded-full bg-white/50",
+                  i === 1 ? "h-2" : i === 2 ? "h-3" : "h-4",
+                )}
+              />
             ))}
           </div>
         </div>
@@ -148,15 +187,21 @@ function PhoneMockup() {
         <div className="px-4 pb-4 space-y-3">
           <div className="pt-1">
             <p className="text-white/50 text-xs">Good morning</p>
-            <p className="text-white text-base font-semibold">Ready for day 3? 💪</p>
+            <p className="text-white text-base font-semibold">
+              Ready for day 3? 💪
+            </p>
           </div>
 
           {/* Today card */}
           <div className="rounded-2xl bg-primary p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-primary-foreground/70 text-[10px] font-medium">TODAY'S SESSION</p>
-                <p className="text-primary-foreground text-sm font-semibold">Upper Body Power</p>
+                <p className="text-primary-foreground/70 text-[10px] font-medium">
+                  TODAY'S SESSION
+                </p>
+                <p className="text-primary-foreground text-sm font-semibold">
+                  Upper Body Power
+                </p>
               </div>
               <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
                 <Play size={12} className="text-primary-foreground ml-0.5" />
@@ -164,7 +209,10 @@ function PhoneMockup() {
             </div>
             <div className="flex gap-2">
               {["45 min", "6 ex.", "Mod"].map((tag) => (
-                <span key={tag} className="text-[9px] font-medium bg-primary-foreground/15 text-primary-foreground rounded-full px-2 py-0.5">
+                <span
+                  key={tag}
+                  className="text-[9px] font-medium bg-primary-foreground/15 text-primary-foreground rounded-full px-2 py-0.5"
+                >
                   {tag}
                 </span>
               ))}
@@ -177,9 +225,14 @@ function PhoneMockup() {
               { label: "This week", value: "3 / 4", color: "text-primary" },
               { label: "Streak", value: "12 days 🔥", color: "text-accent" },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl bg-white/5 border border-white/10 p-2">
+              <div
+                key={s.label}
+                className="rounded-xl bg-white/5 border border-white/10 p-2"
+              >
                 <p className="text-[9px] text-white/40">{s.label}</p>
-                <p className={cn("text-xs font-semibold", s.color)}>{s.value}</p>
+                <p className={cn("text-xs font-semibold", s.color)}>
+                  {s.value}
+                </p>
               </div>
             ))}
           </div>
@@ -187,9 +240,19 @@ function PhoneMockup() {
           {/* Exercise list */}
           <div className="space-y-1.5">
             {["Bench Press", "Overhead Press", "Lat Pulldown"].map((ex, i) => (
-              <div key={ex} className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-2.5 py-2">
-                <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", i === 0 ? "bg-primary" : "bg-white/20")} />
-                <p className="text-white/70 text-[10px] font-medium flex-1 truncate">{ex}</p>
+              <div
+                key={ex}
+                className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-2.5 py-2"
+              >
+                <div
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                    i === 0 ? "bg-primary" : "bg-white/20",
+                  )}
+                />
+                <p className="text-white/70 text-[10px] font-medium flex-1 truncate">
+                  {ex}
+                </p>
                 <p className="text-white/30 text-[9px]">4×10</p>
               </div>
             ))}
@@ -206,7 +269,9 @@ function PhoneMockup() {
         <div className="flex items-center gap-2">
           <Flame size={14} className="text-accent" />
           <div>
-            <p className="text-[9px] text-muted-foreground font-medium">CALORIES</p>
+            <p className="text-[9px] text-muted-foreground font-medium">
+              CALORIES
+            </p>
             <p className="text-sm font-bold text-foreground">847 kcal</p>
           </div>
         </div>
@@ -214,7 +279,12 @@ function PhoneMockup() {
 
       <motion.div
         animate={{ y: [4, -4, 4] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        transition={{
+          duration: 3.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.5,
+        }}
         className="absolute -right-10 top-32 z-20 rounded-2xl bg-card border border-border px-3 py-2"
       >
         <div className="flex items-center gap-1.5">
@@ -230,10 +300,17 @@ function PhoneMockup() {
 
       <motion.div
         animate={{ y: [-3, 5, -3] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1,
+        }}
         className="absolute -left-10 bottom-20 z-20 rounded-2xl bg-primary px-3 py-2"
       >
-        <p className="text-[9px] text-primary-foreground/70 font-medium">STRENGTH GAIN</p>
+        <p className="text-[9px] text-primary-foreground/70 font-medium">
+          STRENGTH GAIN
+        </p>
         <p className="text-sm font-bold text-primary-foreground">+18% ↑</p>
       </motion.div>
     </div>
@@ -241,7 +318,13 @@ function PhoneMockup() {
 }
 
 /* ─── Feature card ─── */
-function FeatureCard({ icon, title, description, tint, delay }: FeatureCardProps) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+  tint,
+  delay,
+}: FeatureCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -250,12 +333,19 @@ function FeatureCard({ icon, title, description, tint, delay }: FeatureCardProps
       transition={{ duration: 0.5, delay, ease: "easeOut" }}
       className="rounded-2xl bg-card border border-border p-6 space-y-4 group hover:-translate-y-0.5 transition-transform duration-200"
     >
-      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center", tint)}>
+      <div
+        className={cn(
+          "w-11 h-11 rounded-xl flex items-center justify-center",
+          tint,
+        )}
+      >
         {icon}
       </div>
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {description}
+        </p>
       </div>
     </motion.div>
   );
@@ -309,13 +399,19 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <Link
             href="/sign-in"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "rounded-full px-4")}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "rounded-full px-4",
+            )}
           >
             Sign in
           </Link>
           <Link
             href="/sign-up"
-            className={cn(buttonVariants({ size: "sm" }), "rounded-full px-5 font-semibold")}
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "rounded-full px-5 font-semibold",
+            )}
           >
             Get started free
           </Link>
@@ -352,13 +448,19 @@ function Navbar() {
           <div className="pt-2 flex flex-col gap-2">
             <Link
               href="/sign-in"
-              className={cn(buttonVariants({ variant: "outline" }), "rounded-full h-11 w-full")}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "rounded-full h-11 w-full",
+              )}
             >
               Sign in
             </Link>
             <Link
               href="/sign-up"
-              className={cn(buttonVariants(), "rounded-full h-11 w-full font-semibold")}
+              className={cn(
+                buttonVariants(),
+                "rounded-full h-11 w-full font-semibold",
+              )}
             >
               Get started free
             </Link>
@@ -371,7 +473,14 @@ function Navbar() {
 
 /* ─── Hero ─── */
 function Hero() {
-  const tags = ["Strength", "HIIT", "Yoga", "Running", "Mobility", "Calisthenics"];
+  const tags = [
+    "Strength",
+    "HIIT",
+    "Yoga",
+    "Running",
+    "Mobility",
+    "Calisthenics",
+  ];
 
   return (
     <section className="relative pt-28 pb-20 sm:pt-36 sm:pb-28 overflow-hidden">
@@ -413,7 +522,9 @@ function Hero() {
               transition={{ duration: 0.5, delay: 0.16 }}
               className="text-lg text-muted-foreground leading-relaxed max-w-lg"
             >
-              Plans built around your schedule. A library of 500+ exercises. Progress tracking that shows real results. Everything you need to train consistently and get stronger.
+              Plans built around your schedule. A library of 500+ exercises.
+              Progress tracking that shows real results. Everything you need to
+              train consistently and get stronger.
             </motion.p>
 
             <motion.div
@@ -424,13 +535,19 @@ function Hero() {
             >
               <Link
                 href="/sign-up"
-                className={cn(buttonVariants(), "rounded-full h-13 px-8 text-base font-semibold gap-2")}
+                className={cn(
+                  buttonVariants(),
+                  "rounded-full h-13 px-8 text-base font-semibold gap-2",
+                )}
               >
                 Start for free <ArrowRight size={16} />
               </Link>
               <Link
                 href="#how-it-works"
-                className={cn(buttonVariants({ variant: "outline" }), "rounded-full h-13 px-8 text-base gap-2 border-border")}
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "rounded-full h-13 px-8 text-base gap-2 border-border",
+                )}
               >
                 <Play size={15} className="fill-current" /> See how it works
               </Link>
@@ -499,12 +616,15 @@ function Features() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-xl mx-auto space-y-4"
         >
-          <p className="text-xs font-semibold text-primary uppercase tracking-wider">Features</p>
+          <p className="text-xs font-semibold text-primary uppercase tracking-wider">
+            Features
+          </p>
           <h2 className="text-4xl font-bold tracking-tight">
             Everything in one place
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            From planning your week to logging your last rep — FitFlow handles the full fitness workflow so you can just focus on training.
+            From planning your week to logging your last rep — FitFlow handles
+            the full fitness workflow so you can just focus on training.
           </p>
         </motion.div>
 
@@ -521,7 +641,10 @@ function Features() {
 /* ─── How it works ─── */
 function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 sm:py-28 bg-card border-y border-border">
+    <section
+      id="how-it-works"
+      className="py-20 sm:py-28 bg-card border-y border-border"
+    >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-14">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -530,8 +653,12 @@ function HowItWorks() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-xl mx-auto space-y-4"
         >
-          <p className="text-xs font-semibold text-primary uppercase tracking-wider">How it works</p>
-          <h2 className="text-4xl font-bold tracking-tight">Up and running in minutes</h2>
+          <p className="text-xs font-semibold text-primary uppercase tracking-wider">
+            How it works
+          </p>
+          <h2 className="text-4xl font-bold tracking-tight">
+            Up and running in minutes
+          </h2>
         </motion.div>
 
         <div className="relative">
@@ -549,11 +676,15 @@ function HowItWorks() {
                 className="flex flex-col items-start lg:items-center text-left lg:text-center gap-4"
               >
                 <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center flex-shrink-0">
-                  <span className="text-xl font-black text-primary-foreground font-mono">{step.n}</span>
+                  <span className="text-xl font-black text-primary-foreground font-mono">
+                    {step.n}
+                  </span>
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.body}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {step.body}
+                  </p>
                 </div>
               </motion.div>
             ))}
@@ -576,8 +707,12 @@ function Testimonials() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-xl mx-auto space-y-4"
         >
-          <p className="text-xs font-semibold text-primary uppercase tracking-wider">Testimonials</p>
-          <h2 className="text-4xl font-bold tracking-tight">Real people, real results</h2>
+          <p className="text-xs font-semibold text-primary uppercase tracking-wider">
+            Testimonials
+          </p>
+          <h2 className="text-4xl font-bold tracking-tight">
+            Real people, real results
+          </h2>
         </motion.div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -601,7 +736,9 @@ function Testimonials() {
               </blockquote>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                  <span className="text-[11px] font-bold text-primary-foreground">{t.avatar}</span>
+                  <span className="text-[11px] font-bold text-primary-foreground">
+                    {t.avatar}
+                  </span>
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{t.name}</p>
@@ -637,7 +774,8 @@ function CTABanner() {
               Your next workout is waiting.
             </h2>
             <p className="text-primary-foreground/75 max-w-md text-base leading-relaxed">
-              Join 50,000+ people who train with a plan, log with ease, and actually see results.
+              Join 50,000+ people who train with a plan, log with ease, and
+              actually see results.
             </p>
           </div>
           <div className="relative flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -645,7 +783,7 @@ function CTABanner() {
               href="/sign-up"
               className={cn(
                 buttonVariants(),
-                "rounded-full h-13 px-8 text-base font-semibold bg-white text-primary hover:bg-white/90 gap-2"
+                "rounded-full h-13 px-8 text-base font-semibold bg-white text-primary hover:bg-white/90 gap-2",
               )}
             >
               Start for free <ArrowRight size={16} />
@@ -669,7 +807,11 @@ function Footer() {
           </p>
           <div className="flex gap-6">
             {["Privacy", "Terms", "Contact"].map((l) => (
-              <Link key={l} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <Link
+                key={l}
+                href="#"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {l}
               </Link>
             ))}

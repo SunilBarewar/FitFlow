@@ -14,6 +14,12 @@ export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
   const id = randomUUID();
 
   switch (widget.type) {
+    case "experience":
+      return { type: "experience", id };
+    case "muscle_focus":
+      return { type: "muscle_focus", id };
+    case "equipment_access":
+      return { type: "equipment_access", id };
     case "choice_chips":
       return { type: "choice_chips", id, options: widget.options };
     case "multi_select_chips":
@@ -42,13 +48,13 @@ export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
       return { type: "urgent_care", id };
     case "plan_preview":
       return {
-        type: "plan_preview",
+        type: "plan_created",
         id,
         plan: {
           id: randomUUID(),
           name: widget.name,
           version: 1,
-          status: "draft",
+          status: "active",
           daysPerWeek: widget.daysPerWeek,
           minutesPerSession: widget.minutesPerSession,
           days: widget.days.map((day) => ({
