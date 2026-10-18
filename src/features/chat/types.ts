@@ -66,13 +66,11 @@ export type ChatBlock =
       type: "choice_chips";
       id: string;
       options: ChoiceOption[];
-      answer?: string;
     }
   | {
       type: "multi_select_chips";
       id: string;
       options: ChoiceOption[];
-      answer?: string[];
     }
   | {
       type: "safety_notice";
@@ -110,5 +108,4 @@ export type ChatMessage = {
   role: "assistant" | "user";
   text?: string;
   block?: ChatBlock;
-  resolved?: boolean;
 };

@@ -1,9 +1,15 @@
-import { Agent } from "@openai/agents";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { ToolLoopAgent } from "ai";
 import { COACH_INSTRUCTIONS } from "./coach-instructions";
-import { searchExercisesTool } from "./tools";
+import { coachTools } from "./tools";
 
-export const coachAgent = new Agent({
-  name: "FitFlow Coach",
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
+
+export const coachAgent = new ToolLoopAgent({
+  id: "fitflow-coach",
+  model: google("gemini-3.5-flash"),
   instructions: COACH_INSTRUCTIONS,
-  tools: [searchExercisesTool],
+  tools: coachTools,
 });

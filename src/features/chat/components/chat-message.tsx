@@ -22,9 +22,11 @@ type Conversation = ReturnType<typeof useChatConversation>;
 export function ChatMessageRow({
   message,
   conversation,
+  interactive,
 }: {
   message: ChatMessage;
   conversation: Conversation;
+  interactive: boolean;
 }) {
   const isUser = message.role === "user";
 
@@ -59,7 +61,7 @@ export function ChatMessageRow({
         {message.block ? (
           <BlockRenderer
             block={message.block}
-            resolved={Boolean(message.resolved)}
+            resolved={!interactive}
             conversation={conversation}
           />
         ) : null}
@@ -84,7 +86,7 @@ function BlockRenderer({
           block={block}
           resolved={resolved}
           onSelect={(optionId, label) =>
-            conversation.answerChoice(block.id, optionId, label)
+            conversation.selectChoice(optionId, label)
           }
         />
       );
@@ -94,7 +96,7 @@ function BlockRenderer({
           block={block}
           resolved={resolved}
           onSubmit={(ids, labels) =>
-            conversation.answerMultiSelect(block.id, ids, labels)
+            conversation.selectMultiChoice(ids, labels)
           }
         />
       );
@@ -103,8 +105,8 @@ function BlockRenderer({
         <PlanPreviewBlock
           block={block}
           resolved={resolved}
-          onAccept={() => conversation.acceptPlan(block.id, block.plan)}
-          onDecline={() => conversation.declinePlan(block.id)}
+          onAccept={() => conversation.acceptPlan(block.plan)}
+          onDecline={() => conversation.declinePlan()}
         />
       );
     case "session_mutation":
@@ -113,9 +115,13 @@ function BlockRenderer({
           block={block}
           resolved={resolved}
           onStart={() =>
-            conversation.startAdjustedWorkout(block.id, block.toMinutes)
+            conversation.startAdjustedWorkout(
+              block.toMinutes,
+              block.fromEquipment,
+              block.toEquipment,
+            )
           }
-          onKeep={() => conversation.keepOriginalWorkout(block.id)}
+          onKeep={() => conversation.keepOriginalWorkout()}
         />
       );
     case "safety_notice":
@@ -123,7 +129,7 @@ function BlockRenderer({
         <SafetyNoticeBlock
           block={block}
           resolved={resolved}
-          onAcknowledge={() => conversation.acknowledgeSafety(block.id)}
+          onAcknowledge={() => conversation.acknowledgeSafety()}
         />
       );
     case "gentle_routine":

@@ -28,6 +28,8 @@ export function ChoiceChipsBlock({
   resolved: boolean;
   onSelect: (optionId: string, label: string) => void;
 }) {
+  const [clickedId, setClickedId] = useState<string | null>(null);
+
   return (
     <motion.div
       variants={chipStagger}
@@ -36,7 +38,7 @@ export function ChoiceChipsBlock({
       className="flex flex-wrap gap-2 pt-1"
     >
       {block.options.map((option) => {
-        const isAnswer = block.answer === option.id;
+        const isAnswer = clickedId === option.id;
         const isDimmed = resolved && !isAnswer;
         return (
           <motion.button
@@ -45,7 +47,10 @@ export function ChoiceChipsBlock({
             variants={chipItem}
             whileTap={resolved ? undefined : { scale: 0.95 }}
             disabled={resolved}
-            onClick={() => onSelect(option.id, option.label)}
+            onClick={() => {
+              setClickedId(option.id);
+              onSelect(option.id, option.label);
+            }}
             className={cn(
               "inline-flex h-10 items-center gap-1.5 rounded-pill border px-4 text-sm font-medium transition-colors",
               isAnswer
@@ -73,7 +78,8 @@ export function MultiSelectChipsBlock({
   resolved: boolean;
   onSubmit: (ids: string[], labels: string[]) => void;
 }) {
-  const [selected, setSelected] = useState<string[]>(block.answer ?? []);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [submittedIds, setSubmittedIds] = useState<string[] | null>(null);
 
   function toggle(id: string) {
     setSelected((prev) =>
@@ -91,7 +97,7 @@ export function MultiSelectChipsBlock({
       >
         {block.options.map((option) => {
           const isSelected = resolved
-            ? (block.answer ?? []).includes(option.id)
+            ? (submittedIds ?? []).includes(option.id)
             : selected.includes(option.id);
           const isDimmed = resolved && !isSelected;
           return (
@@ -126,6 +132,7 @@ export function MultiSelectChipsBlock({
             const labels = block.options
               .filter((o) => selected.includes(o.id))
               .map((o) => o.label);
+            setSubmittedIds(selected);
             onSubmit(selected, labels);
           }}
           className="self-start rounded-pill bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-40"

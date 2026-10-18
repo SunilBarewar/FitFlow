@@ -1,17 +1,17 @@
 "use client";
 
 import { cn } from "cn";
-import { Check, Clock, Flame, Info } from "lucide-react";
+import { CalendarClock, Check, Clock, Flame, Info } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import type { TodayWorkout } from "@/features/chat/types";
 
-export function TodayCard({ today }: { today: TodayWorkout }) {
+export function TodayCard({ today }: { today: TodayWorkout | null }) {
   const [loggedSets, setLoggedSets] = useState<Set<string>>(new Set());
 
   const totalSets = useMemo(
-    () => today.exercises.reduce((sum, ex) => sum + ex.sets, 0),
-    [today.exercises],
+    () => today?.exercises.reduce((sum, ex) => sum + ex.sets, 0) ?? 0,
+    [today],
   );
   const doneCount = loggedSets.size;
   const percent =
@@ -24,6 +24,23 @@ export function TodayCard({ today }: { today: TodayWorkout }) {
       else next.add(key);
       return next;
     });
+  }
+
+  if (!today) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-4 py-10 text-center">
+        <CalendarClock
+          size={22}
+          className="text-muted-foreground"
+          aria-hidden
+        />
+        <p className="text-sm font-medium">No workout planned yet</p>
+        <p className="text-xs text-muted-foreground">
+          Tell your coach in chat what you're going for and today's session will
+          show up here.
+        </p>
+      </div>
+    );
   }
 
   return (

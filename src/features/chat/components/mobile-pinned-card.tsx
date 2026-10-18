@@ -42,14 +42,18 @@ export function MobilePinnedCard({
               {TAB_LABEL[panel.tab]}
             </p>
             {panel.tab === "today" ? (
-              <p className="flex items-center gap-1.5 text-sm font-semibold">
-                <Clock size={13} aria-hidden className="text-primary" />
-                {panel.today.dayLabel} · {panel.today.focus} ·{" "}
-                {panel.today.minutes} min
-              </p>
+              panel.today ? (
+                <p className="flex items-center gap-1.5 text-sm font-semibold">
+                  <Clock size={13} aria-hidden className="text-primary" />
+                  {panel.today.dayLabel} · {panel.today.focus} ·{" "}
+                  {panel.today.minutes} min
+                </p>
+              ) : (
+                <p className="text-sm font-semibold">No workout planned yet</p>
+              )
             ) : panel.tab === "plan" ? (
               <p className="truncate text-sm font-semibold">
-                {panel.plan.name}
+                {panel.plan?.name ?? "No plan yet"}
               </p>
             ) : (
               <p className="text-sm font-semibold">
