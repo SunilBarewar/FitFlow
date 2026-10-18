@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
-import { Navbar } from "./_components/navbar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +36,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <AppProviders>
-          <Navbar />
           {children}
         </AppProviders>
       </body>

@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ConversationData, StoredMessage } from "./lib/get-conversation-data";
 import type {
   ChatBlock,
   ChatMessage,
@@ -25,13 +26,6 @@ type DataWidgetPart = { type: "data-widget"; data: ChatBlock };
 function isDataWidgetPart(part: { type: string }): part is DataWidgetPart {
   return part.type === "data-widget";
 }
-
-type StoredMessage = {
-  id: string;
-  role: "user" | "assistant";
-  text?: string;
-  block?: ChatBlock;
-};
 
 /** The client's notion of "today" — a (date, weekday) pair sent to the
  * server with every log write/read so stats are computed against exactly
@@ -85,29 +79,45 @@ function storedMessagesToUi(messages: StoredMessage[]): UIMessage[] {
   });
 }
 
-export function useChatConversation(userName: string) {
+export function useChatConversation(userName: string, initialData?: ConversationData) {
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/coach/chat" }),
     [],
   );
-  const realChat = useChat({ transport });
+
+  const initialMessages = useMemo(
+    () => (initialData ? storedMessagesToUi(initialData.messages) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const realChat = useChat({ transport, messages: initialMessages });
   const { setMessages } = realChat;
   /** Bumped when history hydration should be ignored (e.g. after starting a new chat). */
   const historyEpoch = useRef(0);
+  /** Whether the initial data has already been applied. */
+  const initialDataApplied = useRef(Boolean(initialData));
 
-  const [hasPlan, setHasPlan] = useState(false);
+  const initialPlan = initialData?.hasPlan ? initialData.activePlan : null;
+
+  const [hasPlan, setHasPlan] = useState(Boolean(initialData?.hasPlan));
   const [startNewChatPending, setStartNewChatPending] = useState(false);
-  const [todayLog, setDayLog] = useState<DayLog | null>(null);
+  const [todayLog, setDayLog] = useState<DayLog | null>(initialData?.todayLog ?? null);
   const [panel, setPanel] = useState<PanelState>({
     tab: "today",
-    plan: null,
-    today: null,
+    plan: initialPlan,
+    today: initialPlan ? todayFromPlan(initialPlan) : null,
     highlightTab: null,
   });
 
   useEffect(() => {
-    let cancelled = false;
+    // Skip the fetch when server-side data was already provided on mount.
+    if (initialDataApplied.current) {
+      initialDataApplied.current = false;
+      return;
+    }
 
+    let cancelled = false;
     const epochAtStart = historyEpoch.current;
 
     async function loadConversation() {

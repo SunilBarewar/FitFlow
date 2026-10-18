@@ -38,13 +38,13 @@ export function NavbarClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div className="hidden md:flex items-center gap-2">
           {isLoggedIn ? (
             <Link
-              href="/dashboard"
+              href="/chat"
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "rounded-full px-5 font-semibold",
               )}
             >
-              Go to dashboard
+              Open FitFlow
             </Link>
           ) : (
             <>
@@ -99,13 +99,13 @@ export function NavbarClient({ isLoggedIn }: { isLoggedIn: boolean }) {
           <div className="pt-2 flex flex-col gap-2">
             {isLoggedIn ? (
               <Link
-                href="/dashboard"
+                href="/chat"
                 className={cn(
                   buttonVariants(),
                   "rounded-full h-11 w-full font-semibold",
                 )}
               >
-                Go to dashboard
+                Open FitFlow
               </Link>
             ) : (
               <>
