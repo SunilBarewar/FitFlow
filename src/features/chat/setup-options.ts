@@ -32,18 +32,19 @@ export type MuscleOption = {
 export const EXPERIENCE_OPTIONS: SetupOption[] = [
   {
     id: "new",
-    label: "Never really worked out before",
+    label: "I'm new to working out",
     description: "We'll keep your first plan simple and approachable.",
   },
   {
     id: "returning",
-    label: "Worked out before, but not consistently (less than 6 months)",
+    label: "Worked out before (less than 6 months)",
     description: "We'll help you build a steady routine.",
   },
   {
     id: "regular",
-    label: "I work out regularly (6+ months)",
-    description: "We can use more variety and more challenging movements.",
+    label: "I work out consistently (more than 6 months)",
+    description:
+      "We can use more variety and more challenging movements.",
   },
 ];
 

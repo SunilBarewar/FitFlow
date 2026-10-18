@@ -1,7 +1,6 @@
 "use client";
 
-import { cn } from "cn";
-import { Dumbbell, House } from "lucide-react";
+import { Dumbbell, House, Warehouse } from "lucide-react";
 import { useRef, useState } from "react";
 import {
   EQUIPMENT,
@@ -11,25 +10,28 @@ import {
   sameIdSet,
 } from "@/features/chat/setup-options";
 import {
-  ContinueButton,
-  DisclosureSwitch,
+  PresetOption,
   SelectableChip,
+  SetupAccordion,
   SetupCard,
+  SetupCardHeader,
+  SetupFooter,
+  SetupSectionLabel,
 } from "./setup-controls";
 
 const PRESETS = [
   {
     id: "gym",
-    label: "Gym access",
-    description: "Use the full range of gym equipment and machines.",
+    label: "At a gym",
+    description: "Machines, cables, barbells — the full range of kit.",
     equipment: GYM_EQUIPMENT,
-    icon: Dumbbell,
+    icon: Warehouse,
     surface: "bg-brand-green-light text-primary",
   },
   {
     id: "home",
-    label: "Work out at home",
-    description: "Start with workouts that need no equipment.",
+    label: "At home, no gear",
+    description: "Bodyweight only. Nothing to buy, nothing to set up.",
     equipment: HOME_EQUIPMENT,
     icon: House,
     surface: "bg-brand-sky-light text-brand-sky",
@@ -50,7 +52,6 @@ export function EquipmentBlock({
   onPersistSubmit?: (selection: string[]) => void;
 }) {
   const [selected, setSelected] = useState<string[]>(initialSelected ?? []);
-  const [showSpecific, setShowSpecific] = useState(false);
   const [submitted, setSubmitted] = useState<string[] | null>(
     resolved && initialSelected ? initialSelected : null,
   );
@@ -60,6 +61,13 @@ export function EquipmentBlock({
   const matchesPreset = PRESETS.some((preset) =>
     sameIdSet(active, preset.equipment),
   );
+  // A restored/custom selection isn't explained by the presets above,
+  // so start with the accordion open to show exactly what was picked.
+  const startsCustom =
+    (initialSelected?.length ?? 0) > 0 &&
+    !PRESETS.some((preset) =>
+      sameIdSet(initialSelected ?? [], preset.equipment),
+    );
 
   function selectPreset(equipment: readonly string[]) {
     if (resolved) return;
@@ -77,82 +85,56 @@ export function EquipmentBlock({
 
   return (
     <SetupCard>
-      <fieldset>
-        <legend className="sr-only">Where will you work out?</legend>
+      <SetupCardHeader
+        icon={Dumbbell}
+        title="Where will you train?"
+        subtitle="We'll only suggest exercises you can actually do with what's around you."
+        status={
+          resolved
+            ? "Saved"
+            : active.length > 0
+              ? `${active.length} picked`
+              : undefined
+        }
+      />
+
+      <SetupSectionLabel>Quick picks — choose one</SetupSectionLabel>
+      <div role="radiogroup" aria-label="Where will you work out?">
         <div className="flex flex-col gap-2">
           {PRESETS.map((preset) => {
             const isSelected = sameIdSet(active, preset.equipment);
-            const Icon = preset.icon;
             return (
-              <label
+              <PresetOption
                 key={preset.id}
-                className={cn(
-                  "flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 transition-colors duration-150",
-                  "has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50",
-                  isSelected
-                    ? "border-primary bg-brand-green-light/70"
-                    : "border-border bg-background hover:bg-muted",
-                  known && matchesPreset && !isSelected && "opacity-40",
-                  resolved && "cursor-default",
-                )}
-              >
-                <input
-                  type="radio"
-                  name={`equipment-${blockId}`}
-                  value={preset.id}
-                  checked={isSelected}
-                  disabled={resolved}
-                  onChange={() => selectPreset(preset.equipment)}
-                  className="sr-only"
-                />
-                <span
-                  className={cn(
-                    "flex size-10 shrink-0 items-center justify-center rounded-lg",
-                    preset.surface,
-                  )}
-                >
-                  <Icon size={18} aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold leading-snug">
-                    {preset.label}
-                  </span>
-                  <span className="mt-0.5 block text-sm leading-snug text-muted-foreground">
-                    {preset.description}
-                  </span>
-                </span>
-                <span
-                  aria-hidden
-                  className={cn(
-                    "flex size-5 shrink-0 items-center justify-center rounded-full border-2",
-                    isSelected
-                      ? "border-primary"
-                      : "border-muted-foreground/40",
-                  )}
-                >
-                  {isSelected ? (
-                    <span className="size-2.5 rounded-full bg-primary" />
-                  ) : null}
-                </span>
-              </label>
+                name={`equipment-${blockId}`}
+                title={preset.label}
+                description={preset.description}
+                icon={preset.icon}
+                iconSurface={preset.surface}
+                selected={isSelected}
+                dimmed={known && matchesPreset && !isSelected}
+                disabled={resolved}
+                onSelect={() => selectPreset(preset.equipment)}
+              />
             );
           })}
         </div>
-      </fieldset>
-
-      <div className="mt-3">
-        <DisclosureSwitch
-          id={`equipment-specific-${blockId}`}
-          checked={showSpecific}
-          disabled={resolved}
-          label="Choose specific equipment"
-          hint="for full control"
-          onChange={setShowSpecific}
-        />
       </div>
 
-      {showSpecific ? (
-        <div className="flex flex-wrap gap-2 pt-3">
+      <SetupAccordion
+        label="Choose specific equipment"
+        summary={
+          active.length === 0
+            ? "Bands, cables, machines and more"
+            : `${active.length} of ${EQUIPMENT.length} selected`
+        }
+        defaultOpen={startsCustom}
+      >
+        <p className="mb-3 text-sm leading-snug text-muted-foreground">
+          Train somewhere in between? Tap everything you can use and we&apos;ll
+          build your sessions around exactly that.
+        </p>
+        <div className="flex flex-wrap gap-2">
           {EQUIPMENT.map((item) => {
             const isSelected = active.includes(item.id);
             return (
@@ -167,26 +149,26 @@ export function EquipmentBlock({
             );
           })}
         </div>
-      ) : null}
+      </SetupAccordion>
 
       {resolved ? null : (
-        <div className="mt-3">
-          {active.length === 0 ? (
-            <p className="mb-2 text-sm text-muted-foreground">
-              Choose where you'll train.
-            </p>
-          ) : null}
-          <ContinueButton
-            disabled={active.length === 0}
-            onClick={() => {
-              if (sent.current || active.length === 0) return;
-              sent.current = true;
-              setSubmitted(active);
-              onSubmit(equipmentReply(active));
-              onPersistSubmit?.(active);
-            }}
-          />
-        </div>
+        <SetupFooter
+          message={
+            active.length === 0
+              ? "Choose a quick pick, or tap out your own kit list below."
+              : matchesPreset
+                ? "Good to go — this sets every exercise in your plan."
+                : `${active.length} of ${EQUIPMENT.length} items picked — we'll only use these.`
+          }
+          disabled={active.length === 0}
+          onContinue={() => {
+            if (sent.current || active.length === 0) return;
+            sent.current = true;
+            setSubmitted(active);
+            onSubmit(equipmentReply(active));
+            onPersistSubmit?.(active);
+          }}
+        />
       )}
     </SetupCard>
   );

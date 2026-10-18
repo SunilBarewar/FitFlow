@@ -16,6 +16,7 @@ export function ChatPanel({
   const { messages, isWaiting, userName, sendText, error } = conversation;
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!error) return;
@@ -24,13 +25,40 @@ export function ChatPanel({
     });
   }, [error]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run on new messages or typing-indicator changes, both of which grow the scroll height.
+  const lastMessage = messages.at(-1);
+  const scrollKey = lastMessage
+    ? `${messages.length}:${lastMessage.id}:${lastMessage.text?.length ?? 0}:${lastMessage.block?.type ?? "none"}:${isWaiting}`
+    : `empty:${isWaiting}`;
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scrollKey captures message growth and widget attach without relying on array identity.
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+
+    const scrollToBottom = () => {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    };
+
+    scrollToBottom();
+    const frame = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(frame);
+  }, [scrollKey]);
+
+  useEffect(() => {
+    const scrollEl = scrollRef.current;
+    const contentEl = contentRef.current;
+    if (!scrollEl || !contentEl) return;
+
+    const observer = new ResizeObserver(() => {
+      const distanceFromBottom =
+        scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
+      if (distanceFromBottom > 120) return;
+      scrollEl.scrollTop = scrollEl.scrollHeight;
     });
-  }, [messages.length, isWaiting]);
+
+    observer.observe(contentEl);
+    return () => observer.disconnect();
+  }, []);
 
   function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
@@ -48,9 +76,9 @@ export function ChatPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-5 sm:px-6"
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain [overflow-anchor:none] px-4 py-5 sm:px-6"
       >
-        <div className="mx-auto flex max-w-xl flex-col gap-4">
+        <div ref={contentRef} className="mx-auto flex max-w-xl flex-col gap-4">
           <AnimatePresence initial={false}>
             {messages.map((message, index) => (
               <ChatMessageRow

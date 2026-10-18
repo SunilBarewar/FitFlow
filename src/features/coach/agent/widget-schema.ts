@@ -31,7 +31,7 @@ export const WidgetSchema = z.discriminatedUnion("type", [
       type: z.literal("equipment_access"),
     })
     .describe(
-      "Gym or home, with optional specific equipment. The UI owns the options.",
+      "Call after experience and muscle_focus in plan setup when you need where they train most weeks (gym vs home) or specific equipment. Never use choice_chips for gym/home. The UI owns all options.",
     ),
   z.object({
     type: z.literal("choice_chips"),

@@ -66,7 +66,7 @@ export function ChatMessageRow({
           isUser
             ? "max-w-[85%] items-end"
             : wide
-              ? "w-full flex-1"
+              ? "w-full min-w-0"
               : "max-w-[85%]",
         )}
       >

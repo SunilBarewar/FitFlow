@@ -67,7 +67,7 @@ export const coachTools = {
 
   show_widget: tool({
     description:
-      "Render one structured UI widget. Use experience, muscle_focus, or equipment_access for those setup questions. Session length uses choice_chips with the fixed time ranges from the instructions. Do not ask how many days they train unless they bring up their schedule; then use choice_chips for a day split. Never use the words beginner, intermediate, or expert. Other widgets: multi-select chips, plan preview, session adjustment, safety notice, gentle routine, urgent care. Call this as the last action in your turn — after calling it, send no further text and no further tool calls this turn.",
+      "Render one structured UI widget. Plan setup order: experience → muscle_focus → equipment_access → session-length choice_chips. After the user answers muscle_focus, the next setup widget is usually equipment_access: call show_widget with { type: 'equipment_access' } whenever you ask gym vs home or what equipment they have — never ask that in text only. Gym/home is never choice_chips. Use experience, muscle_focus, or equipment_access for those three setup steps. Session length uses choice_chips with the fixed time ranges from the instructions. Do not ask how many days they train unless they bring up their schedule; then use choice_chips for a day split. Never use the words beginner, intermediate, or expert. Other widgets: multi-select chips, plan preview, session adjustment, safety notice, gentle routine, urgent care. Call this as the last action in your turn — after calling it, send no further text and no further tool calls this turn.",
     inputSchema: z.object({ widget: WidgetSchema }),
     execute: async () => "Widget shown to the user.",
   }),
