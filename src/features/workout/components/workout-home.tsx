@@ -11,7 +11,6 @@ import {
 } from "../use-workout-session";
 import { AdjustDialog } from "./adjust-dialog";
 import { ExerciseRow } from "./exercise-row";
-import { FinishSessionDialog } from "./finish-session-dialog";
 import { PlanWeek } from "./plan-week";
 import { SessionHero } from "./session-hero";
 import { WeekStrip } from "./week-strip";
@@ -42,8 +41,6 @@ export function WorkoutHome({
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
-  const [finishOpen, setFinishOpen] = useState(false);
-
   const doneCount = useMemo(
     () =>
       session.exercises.filter((exercise) => exercise.status === "done").length,
@@ -52,11 +49,6 @@ export function WorkoutHome({
 
   const nextExercise = session.exercises.find(
     (exercise) => exercise.status === "pending",
-  );
-
-  const pendingExercises = useMemo(
-    () => session.exercises.filter((exercise) => exercise.status === "pending"),
-    [session.exercises],
   );
 
   const sessionLocked = session.status === "completed";
@@ -70,24 +62,15 @@ export function WorkoutHome({
     status: ExerciseLogStatus,
     note?: string,
   ) {
-    void setExerciseStatus(exerciseId, status, note);
+    void setExerciseStatus(exerciseId, status, note).then((completed) => {
+      if (completed) {
+        toast.success("Session complete", {
+          description: "Logged for today. Recovery starts now.",
+        });
+      }
+    });
     // Collapse once logged — the next exercise is what matters now.
     if (status === "done" && expandedId === exerciseId) setExpandedId(null);
-  }
-
-  function requestFinishSession() {
-    if (sessionLocked) return;
-    setFinishOpen(true);
-  }
-
-  async function finishSession() {
-    setFinishOpen(false);
-    const ok = await setSessionStatus("completed");
-    if (ok) {
-      toast.success("Session complete", {
-        description: "Logged for today. Recovery starts now.",
-      });
-    }
   }
 
   async function skipDay() {
@@ -118,7 +101,6 @@ export function WorkoutHome({
             doneCount={doneCount}
             nextExercise={nextExercise}
             onStart={() => setExpandedId(nextExercise ? nextExercise.id : null)}
-            onRequestFinish={requestFinishSession}
             onOpenAdjust={() => setAdjustOpen(true)}
             onResetToPlan={() => void restorePlan()}
             pendingAction={pendingAction}
@@ -195,14 +177,6 @@ export function WorkoutHome({
           askCoach("I need to change today's session — here's what's going on:")
         }
         pending={pendingAction === "adjust"}
-      />
-      <FinishSessionDialog
-        open={finishOpen}
-        onOpenChange={setFinishOpen}
-        pendingExercises={pendingExercises}
-        doneCount={doneCount}
-        onConfirm={() => void finishSession()}
-        pending={pendingAction === "status:completed"}
       />
     </div>
   );

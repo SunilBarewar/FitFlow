@@ -21,7 +21,6 @@ export function SessionHero({
   doneCount,
   nextExercise,
   onStart,
-  onRequestFinish,
   onOpenAdjust,
   onResetToPlan,
   pendingAction,
@@ -30,7 +29,6 @@ export function SessionHero({
   doneCount: number;
   nextExercise?: SessionExercise;
   onStart: () => void;
-  onRequestFinish: () => void;
   onOpenAdjust: () => void;
   onResetToPlan: () => void;
   pendingAction: string | null;
@@ -46,11 +44,9 @@ export function SessionHero({
     ? "Nothing planned — recovery counts as training."
     : isComplete
       ? `Session locked · ${doneCount} logged. Nice work.`
-      : pendingCount === 0
-        ? "All set — tap Finish when you're ready to lock today."
-        : doneCount === 0
-          ? `${session.targetMinutes ?? 45} min · ${total} exercises`
-          : `${pendingCount} exercise${pendingCount === 1 ? "" : "s"} left · ${session.targetMinutes ?? 45} min`;
+      : doneCount === 0
+        ? `${session.targetMinutes ?? 45} min · ${total} exercises`
+        : `${pendingCount} exercise${pendingCount === 1 ? "" : "s"} left · ${session.targetMinutes ?? 45} min`;
 
   return (
     <section className="overflow-hidden rounded-[26px] border border-line bg-surface shadow-card">
@@ -172,40 +168,18 @@ export function SessionHero({
                 </motion.button>
               ) : null}
 
-              {/* On phones the two quiet actions share a row under Start;
-                  on wider screens they join its row (sm:contents). Finish
-                  turns ink when it's the only action left — everything is
-                  logged, so closing the day is the primary move. */}
-              <div className="flex gap-2 sm:contents">
-                <button
-                  type="button"
-                  onClick={onOpenAdjust}
-                  disabled={pendingAction !== null}
-                  className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken disabled:opacity-50 sm:h-12 sm:flex-none"
-                >
-                  <MinutesMark
-                    size={15}
-                    minutes={session.targetMinutes ?? 45}
-                  />
-                  Adjust today
-                </button>
-                <button
-                  type="button"
-                  onClick={onRequestFinish}
-                  disabled={pendingAction !== null}
-                  className={cn(
-                    "flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 sm:h-12 sm:flex-none sm:px-5",
-                    nextExercise
-                      ? "border border-line bg-surface text-ink-soft hover:bg-sunken"
-                      : "bg-ink text-white hover:bg-ink-soft",
-                  )}
-                >
-                  <Tick size={14} />
-                  {pendingAction === "status:completed"
-                    ? "Finishing…"
-                    : "Finish"}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onOpenAdjust}
+                disabled={pendingAction !== null}
+                className="flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken disabled:opacity-50 sm:h-12 sm:flex-none sm:px-5"
+              >
+                <MinutesMark
+                  size={15}
+                  minutes={session.targetMinutes ?? 45}
+                />
+                Adjust today
+              </button>
             </div>
           )}
         </div>

@@ -5,7 +5,7 @@ import type { SessionStatus } from "@/features/workout/types";
 import { apiError } from "@/lib/utils/http";
 
 // ---------------------------------------------------------------------------
-// PATCH /api/workout/today/status — start, finish, skip the day, or clear it.
+// PATCH /api/workout/today/status — skip the day, reset, or legacy finish.
 // ---------------------------------------------------------------------------
 
 type Body = { date: string; status: SessionStatus };

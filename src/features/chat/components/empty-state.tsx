@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import { ChatAiDisclosure } from "./chat-ai-disclosure";
 import { Composer } from "./composer";
 import { AskMark, LowEnergyMark, WeekMark } from "./ui/glyphs";
 
@@ -75,6 +76,7 @@ export function EmptyState({
             placeholder="Tell me anything — how you're feeling, what you want to train"
             initialDraft={initialDraft}
           />
+          <ChatAiDisclosure />
         </motion.div>
 
         <motion.div

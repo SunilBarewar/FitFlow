@@ -143,9 +143,11 @@ export function deriveSessionStatus(
     // An explicitly skipped day stays skipped until something is logged.
     return current === "skipped" ? "skipped" : "not_started";
   }
-  // "Completed" is only set when the user taps Finish — not when every
-  // exercise happens to be logged.
-  if (current === "completed") return "completed";
+  if (logged === exercises.length) {
+    // Skip-the-day keeps "skipped"; logging every move as skipped finishes the session.
+    if (current === "skipped") return "skipped";
+    return "completed";
+  }
   return "in_progress";
 }
 

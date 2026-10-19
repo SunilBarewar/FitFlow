@@ -16,6 +16,8 @@ import { LivePanel } from "./live-panel";
 const SURFACE =
   "flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-line bg-surface shadow-card";
 
+export { ChatAiDisclosure } from "./chat-ai-disclosure";
+
 export function ChatShell({
   conversation,
   view,

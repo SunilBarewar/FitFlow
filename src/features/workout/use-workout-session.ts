@@ -23,9 +23,8 @@ type Failure = (message: string) => void;
  *
  * Writes are optimistic — a tap lands instantly and rolls back if the server
  * disagrees — because logging happens mid-set, with a sweaty thumb, on hotel
- * wifi. The one rule the client shares with the server is how a session's
- * status falls out of its exercises except completion — that requires Finish;
- * see deriveSessionStatus in the store.
+ * wifi. Session status is derived from exercise logs on both sides — see
+ * deriveSessionStatus in the store.
  */
 export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
   const [session, setSession] = useState(initial.session);
@@ -112,7 +111,7 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
     (exerciseId: string, status: ExerciseLogStatus, note?: string) => {
       if (latest.current.status === "completed") {
         onError("Today's session is complete and can't be changed.");
-        return Promise.resolve();
+        return Promise.resolve(false);
       }
 
       const rollback = latest.current;
@@ -130,7 +129,7 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
         };
       });
 
-      const run = async () => {
+      const run = async (): Promise<boolean> => {
         try {
           const response = await fetch("/api/workout/today/exercise", {
             method: "PATCH",
@@ -147,7 +146,14 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
           }
           if (!response.ok) throw new Error("save failed");
           const data = (await response.json()) as { session: WorkoutSession };
+          const newlyCompleted =
+            data.session.status === "completed" &&
+            rollback.status !== "completed";
           setSession(data.session);
+          if (newlyCompleted) {
+            void refreshWeek(setWeek, rollback.date);
+          }
+          return newlyCompleted;
         } catch (error) {
           setSession(rollback);
           onError(
@@ -155,6 +161,7 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
               ? "Today's session is complete and can't be changed."
               : "That didn't save. Your progress is safe — try again.",
           );
+          return false;
         }
       };
 
@@ -267,7 +274,10 @@ function statusFrom(
   if (exercises.length === 0) return "rest";
   const logged = exercises.filter((item) => item.status !== "pending").length;
   if (logged === 0) return current === "skipped" ? "skipped" : "not_started";
-  if (current === "completed") return "completed";
+  if (logged === exercises.length) {
+    if (current === "skipped") return "skipped";
+    return "completed";
+  }
   return "in_progress";
 }
 

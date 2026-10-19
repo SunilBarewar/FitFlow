@@ -4,6 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { useEffect, useRef } from "react";
 import { toast } from "@/components/ui/fit-toaster";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
+import { ChatAiDisclosure } from "./chat-ai-disclosure";
 import { ChatMessageRow, CoachActivityIndicator } from "./chat-message";
 import { Composer } from "./composer";
 import { EmptyState } from "./empty-state";
@@ -117,6 +118,7 @@ export function ChatPanel({
       <div className="shrink-0 px-4 pt-1 pb-3 sm:px-6 sm:pb-4">
         <div className="mx-auto max-w-2xl">
           <Composer onSend={sendText} initialDraft={initialDraft} />
+          <ChatAiDisclosure />
         </div>
       </div>
     </div>
