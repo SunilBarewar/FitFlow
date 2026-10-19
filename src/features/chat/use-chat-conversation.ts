@@ -198,9 +198,7 @@ export function useChatConversation(
   const messages: ChatMessage[] = useMemo(() => {
     const lastMessage = realChat.messages.at(-1);
     const streamingAssistantId =
-      isStreaming && lastMessage?.role === "assistant"
-        ? lastMessage.id
-        : null;
+      isStreaming && lastMessage?.role === "assistant" ? lastMessage.id : null;
 
     return realChat.messages.map((message) => {
       const text = message.parts
