@@ -29,13 +29,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
+  // /home is the signed-in landing; it redirects on to /chat when the user
+  // has no active plan (the proxy can't read the database to know that).
   if (isAuthPath(pathname) && session) {
-    return NextResponse.redirect(new URL("/chat", request.url));
+    return NextResponse.redirect(new URL("/home", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/chat/:path*", "/sign-in", "/sign-up"],
+  matcher: ["/chat/:path*", "/home/:path*", "/sign-in", "/sign-up"],
 };
