@@ -194,7 +194,7 @@ export function ContextBar({
             <button
               type="button"
               disabled={startNewChatPending}
-              className="flex h-11 w-full items-center justify-center rounded-xl bg-destructive px-4 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:pointer-events-none disabled:opacity-50"
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-destructive px-4 text-sm text-white font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:pointer-events-none disabled:opacity-50"
               onClick={handleConfirmStartNewPlan}
             >
               Yes, start new plan

@@ -13,7 +13,8 @@ export function ChatPanel({
 }: {
   conversation: ReturnType<typeof useChatConversation>;
 }) {
-  const { messages, isWaiting, userName, sendText, error } = conversation;
+  const { messages, isWaiting, isReady, userName, sendText, error } =
+    conversation;
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -27,8 +28,8 @@ export function ChatPanel({
 
   const lastMessage = messages.at(-1);
   const scrollKey = lastMessage
-    ? `${messages.length}:${lastMessage.id}:${lastMessage.text?.length ?? 0}:${lastMessage.block?.type ?? "none"}:${isWaiting}`
-    : `empty:${isWaiting}`;
+    ? `${messages.length}:${lastMessage.id}:${lastMessage.text?.length ?? 0}:${lastMessage.block?.type ?? "none"}:${isWaiting}:${isReady}`
+    : `empty:${isWaiting}:${isReady}`;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scrollKey captures message growth and widget attach without relying on array identity.
   useEffect(() => {
@@ -85,7 +86,11 @@ export function ChatPanel({
                 key={message.id}
                 message={message}
                 conversation={conversation}
-                interactive={index === messages.length - 1 && !isWaiting}
+                interactive={
+                  index === messages.length - 1 &&
+                  isReady &&
+                  message.role === "assistant"
+                }
               />
             ))}
             {isWaiting ? <TypingIndicator key="typing" /> : null}

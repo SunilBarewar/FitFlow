@@ -191,27 +191,33 @@ export function useChatConversation(
     }
   }, [realChat.messages]);
 
-  const messages: ChatMessage[] = useMemo(
-    () =>
-      realChat.messages.map((message) => {
-        const text = message.parts
-          .filter((part) => part.type === "text")
-          .map((part) => part.text)
-          .join("");
-        const widgetPart = message.parts.find(isDataWidgetPart);
-
-        return {
-          id: message.id,
-          role: message.role === "user" ? "user" : "assistant",
-          text: text || undefined,
-          block: widgetPart?.data,
-        };
-      }),
-    [realChat.messages],
-  );
-
   const isReady = realChat.status === "ready";
+  const isStreaming = realChat.status === "streaming";
   const isWaiting = realChat.status === "submitted";
+
+  const messages: ChatMessage[] = useMemo(() => {
+    const lastMessage = realChat.messages.at(-1);
+    const streamingAssistantId =
+      isStreaming && lastMessage?.role === "assistant"
+        ? lastMessage.id
+        : null;
+
+    return realChat.messages.map((message) => {
+      const text = message.parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("");
+      const widgetPart = message.parts.find(isDataWidgetPart);
+      const hideBlockWhileStreaming = message.id === streamingAssistantId;
+
+      return {
+        id: message.id,
+        role: message.role === "user" ? "user" : "assistant",
+        text: text || undefined,
+        block: hideBlockWhileStreaming ? undefined : widgetPart?.data,
+      };
+    });
+  }, [realChat.messages, isStreaming]);
 
   const highlightPanel = useCallback((tab: PanelTab) => {
     setPanel((prev) => ({ ...prev, tab, highlightTab: tab }));
