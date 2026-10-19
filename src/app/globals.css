@@ -318,6 +318,15 @@
   .bottom-nav-safe {
     padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
   }
+
+  /* Scrollable region without visible scrollbar (trackpad / touch still work) */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* ─────────────────────────────────────────────────
