@@ -211,7 +211,7 @@ export function ChatHeader({
                 className="flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
               >
                 <HomeMark size={16} />
-                <span className="hidden sm:inline">Today</span>
+                <span className="hidden sm:inline">Home</span>
               </Link>
             ) : null}
 

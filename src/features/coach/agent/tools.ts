@@ -69,30 +69,90 @@ export const coachTools = {
     description:
       "Silently update the active plan in the database. Use this for exercise swaps — it saves the change without showing the full plan card. After calling this, call show_widget(exercise_swap) to show the comparison card. Pass all 7 days with the full updated exercise list. Never change the plan name.",
     inputSchema: z.object({
-      name: z.string().describe("The plan name — must match the original, never change it."),
+      name: z
+        .string()
+        .describe("The plan name — must match the original, never change it."),
       daysPerWeek: z.number(),
       minutesPerSession: z.number(),
-      days: z.array(
-        z.object({
-          label: z.string(),
-          focus: z.string(),
-          exercises: z
-            .array(
-              z.object({
-                exerciseId: z
-                  .string()
-                  .describe("Exact id from search_exercises or plan context."),
-                name: z.string(),
-                sets: z.number(),
-                reps: z.string(),
-                equipment: z.string(),
-              }),
-            )
-            .min(0),
-        }),
-      ).min(1),
+      days: z
+        .array(
+          z.object({
+            label: z.string(),
+            focus: z.string(),
+            exercises: z
+              .array(
+                z.object({
+                  exerciseId: z
+                    .string()
+                    .describe(
+                      "Exact id from search_exercises or plan context.",
+                    ),
+                  name: z.string(),
+                  sets: z.number(),
+                  reps: z.string(),
+                  equipment: z.string(),
+                }),
+              )
+              .min(0),
+          }),
+        )
+        .min(1),
     }),
     execute: async () => "Plan updated in database.",
+  }),
+
+  adjust_today_session: tool({
+    description:
+      "Change TODAY'S session only, leaving the weekly plan untouched. Use this whenever the user wants today to be different — shorter, easier, a movement dropped because something hurts, a stand-in exercise, an extra finisher. This writes immediately, so say what you changed afterwards. Use `restore: true` (with no other edits) to put the planned session back when the user says they'd rather keep the original. Never use update_plan for a one-day change: that rewrites every future week.",
+    inputSchema: z.object({
+      reason: z
+        .string()
+        .describe(
+          "Short, in the user's own words — e.g. 'Only 30 minutes today', 'Shoulder pain'. Shown to the user on the session card.",
+        ),
+      targetMinutes: z
+        .number()
+        .nullable()
+        .describe("New length for today in minutes. Null to leave it alone."),
+      remove: z
+        .array(z.string())
+        .nullable()
+        .describe(
+          "Exercise ids to drop from today. Anything already marked done stays in the log regardless.",
+        ),
+      add: z
+        .array(
+          z.object({
+            exerciseId: z
+              .string()
+              .describe("Exact id from search_exercises — never invented."),
+            sets: z.number(),
+            reps: z.string(),
+          }),
+        )
+        .nullable()
+        .describe("Exercises to add to today only."),
+      replace: z
+        .array(
+          z.object({
+            exerciseId: z.string().describe("The id being stood in for."),
+            withExerciseId: z
+              .string()
+              .describe("Exact id from search_exercises."),
+            sets: z.number(),
+            reps: z.string(),
+          }),
+        )
+        .nullable()
+        .describe("Stand-ins for today only. The plan keeps the original."),
+      restore: z
+        .boolean()
+        .nullable()
+        .describe(
+          "True to discard today's changes and rebuild from the plan. Use alone.",
+        ),
+    }),
+    execute: async () => "Today's session updated.",
   }),
 
   show_widget: tool({

@@ -22,6 +22,8 @@ export function coachStepLabelForTool(
       return "Searching the exercise library";
     case "update_plan":
       return "Updating your plan";
+    case "adjust_today_session":
+      return "Reworking today's session";
     case "show_widget": {
       const widget =
         input !== null &&

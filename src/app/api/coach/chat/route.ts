@@ -13,7 +13,17 @@ import {
   buildPlan,
   toChatWidgetFromInput,
 } from "@/features/coach/agent/to-chat-widget";
+import {
+  applySessionAdjustment,
+  ensureSession,
+  resetSessionToPlan,
+} from "@/features/workout/lib/session-store";
 import { getSessionFromCookies } from "@/lib/auth/session";
+import {
+  getTodayRef,
+  isDateKey,
+  isWithinServerDayWindow,
+} from "@/lib/date/today";
 import { connectDB } from "@/lib/db";
 import { apiError } from "@/lib/utils/http";
 import { ConversationModel } from "@/models/conversation";
@@ -21,7 +31,25 @@ import { MessageModel } from "@/models/message";
 
 type IncomingBody = {
   messages?: unknown;
+  /** The client's notion of today, so day-scoped edits land on the right date
+   * rather than on the server's timezone. Validated before use. */
+  todayDate?: unknown;
+  todayDayLabel?: unknown;
 };
+
+/** The client owns "today"; the server still refuses an implausible date. */
+function resolveDayRef(body: IncomingBody): { date: string; dayLabel: string } {
+  const fallback = getTodayRef();
+  if (
+    isDateKey(body.todayDate) &&
+    isWithinServerDayWindow(body.todayDate) &&
+    typeof body.todayDayLabel === "string" &&
+    body.todayDayLabel
+  ) {
+    return { date: body.todayDate, dayLabel: body.todayDayLabel };
+  }
+  return fallback;
+}
 
 /** Extract plain text from the AI SDK message parts array. */
 function textFromMessage(message: UIMessage | undefined): string {
@@ -104,11 +132,10 @@ export async function POST(request: Request) {
     return apiError(message, 400, "VALIDATION_ERROR");
   }
 
-  // Per-request context (today's day + active plan) via instructions — not system messages in `messages`.
-  const todayLabel = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-  });
-  const contextLines: string[] = [`Today is ${todayLabel}.`];
+  // Per-request context (today's day + active plan + today's actual session)
+  // via instructions — not system messages in `messages`.
+  const dayRef = resolveDayRef(body);
+  const contextLines: string[] = [`Today is ${dayRef.dayLabel}.`];
   if (conversation.activePlan) {
     const plan = conversation.activePlan as {
       name?: string;
@@ -143,6 +170,38 @@ export async function POST(request: Request) {
   } else {
     contextLines.push("The user has no active plan yet.");
   }
+
+  // Today's session as it actually stands — what was logged, what was dropped,
+  // what was swapped. Without this the coach guesses at progress, or re-offers
+  // an adjustment it already made.
+  const todaySession = await ensureSession(
+    session.sub,
+    dayRef.date,
+    dayRef.dayLabel,
+  );
+  if (todaySession) {
+    if (todaySession.exercises.length === 0) {
+      contextLines.push(
+        `Today's session (${dayRef.date}): rest day — nothing planned.`,
+      );
+    } else {
+      const lines = todaySession.exercises
+        .map((exercise) => {
+          const marks: string[] = [exercise.status];
+          if (exercise.origin !== "plan") marks.push(exercise.origin);
+          if (exercise.note) marks.push(`note: "${exercise.note}"`);
+          return `  - ${exercise.name} (id: ${exercise.id}) · ${exercise.sets} × ${exercise.reps} · ${marks.join(" · ")}`;
+        })
+        .join("\n");
+      const adjusted = todaySession.adjustment
+        ? `\nAlready adjusted today: ${todaySession.adjustment.reason}. Don't offer the same change twice.`
+        : "";
+      contextLines.push(
+        `Today's session (${dayRef.date}) — status: ${todaySession.status}, ${todaySession.targetMinutes ?? "?"} min:\n${lines}${adjusted}`,
+      );
+    }
+  }
+
   let streamResult: Awaited<ReturnType<typeof coachAgent.stream>>;
   try {
     streamResult = await coachAgent.stream({
@@ -164,7 +223,7 @@ export async function POST(request: Request) {
 
       for await (const part of streamResult.fullStream) {
         if (part.type === "start-step") {
-          coachProgress.advance("Thinking through your question");
+          coachProgress.advance("Thinking...");
           continue;
         }
 
@@ -228,6 +287,60 @@ export async function POST(request: Request) {
             id: part.toolCallId,
             data: { type: "plan_updated", id: part.toolCallId, plan },
           });
+        }
+
+        if (
+          part.type === "tool-call" &&
+          part.toolName === "adjust_today_session"
+        ) {
+          const input = part.input as {
+            reason: string;
+            targetMinutes: number | null;
+            remove: string[] | null;
+            add: { exerciseId: string; sets: number; reps: string }[] | null;
+            replace:
+              | {
+                  exerciseId: string;
+                  withExerciseId: string;
+                  sets: number;
+                  reps: string;
+                }[]
+              | null;
+            restore: boolean | null;
+          };
+
+          // The session has to exist before it can be edited — the user may
+          // never have opened the home page today.
+          await ensureSession(session.sub, dayRef.date, dayRef.dayLabel);
+
+          const adjusted = input.restore
+            ? await resetSessionToPlan(
+                session.sub,
+                dayRef.date,
+                dayRef.dayLabel,
+              )
+            : await applySessionAdjustment(session.sub, dayRef.date, {
+                reason: input.reason,
+                source: "coach",
+                targetMinutes: input.targetMinutes ?? undefined,
+                remove: input.remove ?? undefined,
+                add: input.add ?? undefined,
+                replace: input.replace ?? undefined,
+              });
+
+          // Sync the live panel in real time. Transient, like plan_updated —
+          // never persisted as a message block.
+          if (adjusted) {
+            writer.write({
+              type: "data-widget",
+              id: part.toolCallId,
+              data: {
+                type: "session_adjusted",
+                id: part.toolCallId,
+                session: adjusted,
+              },
+            });
+          }
         }
 
         if (part.type === "tool-call" && part.toolName === "show_widget") {

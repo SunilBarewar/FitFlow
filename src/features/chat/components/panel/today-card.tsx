@@ -167,9 +167,10 @@ export function TodayCard({
                     className="mt-0.5 shrink-0 text-sky-ink"
                   />
                   <span>
-                    Adjusted for today: {today.adjusted.reason} —{" "}
-                    {today.adjusted.fromEquipment} →{" "}
-                    {today.adjusted.toEquipment}
+                    Adjusted for today: {today.adjusted.reason}
+                    {today.adjusted.fromEquipment && today.adjusted.toEquipment
+                      ? ` — ${today.adjusted.fromEquipment} → ${today.adjusted.toEquipment}`
+                      : null}
                   </span>
                 </p>
               </motion.div>

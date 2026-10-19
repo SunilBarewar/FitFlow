@@ -183,6 +183,7 @@ function BlockRenderer({
         />
       );
     case "plan_updated":
+    case "session_adjusted":
       return null;
     case "session_mutation":
       return (

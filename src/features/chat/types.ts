@@ -1,3 +1,5 @@
+import type { WorkoutSession } from "@/features/workout/types";
+
 export type Exercise = {
   id: string;
   name: string;
@@ -50,8 +52,9 @@ export type TodayWorkout = {
   adjusted?: {
     reason: string;
     fromMinutes: number;
-    fromEquipment: string;
-    toEquipment: string;
+    /** Only set when the adjustment was an equipment change. */
+    fromEquipment?: string;
+    toEquipment?: string;
   };
   exercises: Exercise[];
 };
@@ -98,6 +101,13 @@ export type ChatBlock =
       type: "plan_updated";
       id: string;
       plan: Plan;
+    }
+  | {
+      /** Today's session changed (shorter, swapped, trimmed). Renders nothing —
+       * it only carries the new session to the live panel. */
+      type: "session_adjusted";
+      id: string;
+      session: WorkoutSession;
     }
   | {
       type: "session_mutation";

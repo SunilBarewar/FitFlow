@@ -1,6 +1,6 @@
 # Workout Home — Plan & Implementation Spec
 
-> **Status:** Phases 1–2 implemented (backend + the `/home` page) · Phase 3 pending
+> **Status:** Phases 1–3 implemented.
 > **Scope:** a new authenticated `/home` surface where a user manages their active plan and logs today's session without talking to the coach — plus the backend changes that make per-day session state a first-class thing.
 > **Companion docs:** [`design-system.md`](./design-system.md) (all UI work), [`generative-chat-ui.md`](./generative-chat-ui.md) (chat contract — unchanged by this work).
 
@@ -192,7 +192,7 @@ Everything else in the store module:
 | `setExerciseStatus(userId, date, exerciseId, status, note?)` | Single-exercise log; re-derives session status |
 | `setSessionStatus(userId, date, status)` | Explicit start / finish / skip-day / reset |
 | `applySessionAdjustment(userId, date, patch)` | Day-only edit: replace/add/remove exercises, change `targetMinutes`, record `adjustment` |
-| `resetSessionToPlan(userId, date)` | Throw away today's divergence, re-materialize from the plan |
+| `resetSessionToPlan(userId, date)` | Throw away today's divergence, re-materialize from the plan — **keeping the status and note of anything already logged**, since restoring the shape of a session must not erase work that actually happened |
 
 **Every function takes `userId` and scopes its query by it.** No endpoint accepts a session `_id` from the client.
 
@@ -391,10 +391,12 @@ Each phase ends at a point where the app is shippable and `/chat` is untouched.
 
 *Done when:* a user with a plan can open `/home`, work through today, adjust it, and see it reflected in `/chat` after a refresh — and a user without a plan lands in `/chat`.
 
-### Phase 3 — Coach writes to the session (optional, after 1–2)
-13. New agent tool `adjust_today_session` — day-scoped edits that write a session, not the plan.
-14. Point the existing `session_mutation` widget at it, so "30 minutes and a sore shoulder" becomes durable instead of cosmetic.
-15. Feed the current session into the coach's per-request context block in `api/coach/chat`, next to the active plan, so it stops guessing at today's progress.
+### Phase 3 — Coach writes to the session — **done**
+13. New agent tool `adjust_today_session` — day-scoped edits (`targetMinutes`, `remove`, `add`, `replace`, `restore`) that write a session, not the plan.
+14. The `session_mutation` widget is now a **receipt**, not a proposal: the tool writes first, the card reports what changed, and "I'll keep the original" routes back through `adjust_today_session({ restore: true })`. The chat route intercepts the tool call exactly as it already does for `update_plan`, and emits a transient `session_adjusted` block — the same trick `plan_updated` uses — so the live panel repaints without the change being persisted as a message.
+15. Today's session goes into the coach's per-request context next to the plan: per-exercise status, origin, notes, and a line naming an adjustment already made, so it stops guessing at progress or re-offering the same change.
+
+The client sends its own `todayDate`/`todayDayLabel` with every chat turn (`DefaultChatTransport`'s `body` resolver, evaluated per request so a tab open across midnight stays correct). The server validates them against the same day window the workout routes use and falls back to server time.
 
 This is the one phase that touches coach behavior; it is deliberately last and independently revertable.
 

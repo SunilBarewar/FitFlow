@@ -615,7 +615,13 @@ export async function applySessionAdjustment(
   return updated ? toDTO(updated) : null;
 }
 
-/** Throw away today's divergence and rebuild from the current plan day. */
+/**
+ * Throw away today's divergence and rebuild from the current plan day.
+ *
+ * Restoring the *shape* of the session is not the same as un-doing the work:
+ * anything already logged keeps its status and note, so putting the planned
+ * exercises back can't quietly erase a set the user actually did.
+ */
 export async function resetSessionToPlan(
   userId: string,
   date: string,
@@ -627,9 +633,44 @@ export async function resetSessionToPlan(
   const plan = await getActivePlan(userObjId);
   if (!plan) return null;
 
+  const existing = await WorkoutSessionModel.findOne({
+    userId: userObjId,
+    date,
+  }).lean<LeanSession | null>();
+
+  const logged = new Map(
+    (existing?.exercises ?? [])
+      .filter((exercise) => exercise.status !== "pending")
+      .map((exercise) => [exercise.exerciseId, toWrite(exercise)]),
+  );
+
+  const fields = newSessionFields(plan, date, dayLabel);
+  const exercises = fields.exercises.map((exercise) => {
+    const previous = logged.get(exercise.exerciseId);
+    return previous
+      ? {
+          ...exercise,
+          status: previous.status,
+          note: previous.note,
+          completedAt: previous.completedAt,
+        }
+      : exercise;
+  });
+  const status = deriveSessionStatus(exercises, fields.status as SessionStatus);
+
   const reset = await WorkoutSessionModel.findOneAndUpdate(
     { userId: userObjId, date },
-    { $set: newSessionFields(plan, date, dayLabel) },
+    {
+      $set: {
+        ...fields,
+        exercises,
+        status,
+        ...timestampsFor(status, {
+          startedAt: existing?.startedAt ?? null,
+          completedAt: existing?.completedAt ?? null,
+        }),
+      },
+    },
     { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
   ).lean<LeanSession | null>();
 

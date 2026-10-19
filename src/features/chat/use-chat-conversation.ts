@@ -3,6 +3,8 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { sessionToDayLog } from "@/features/workout/lib/adapters";
+import type { WorkoutSession } from "@/features/workout/types";
 import { getTodayRef } from "@/lib/date/today";
 import type {
   ConversationData,
@@ -77,6 +79,26 @@ function todayFromPlan(plan: Plan): TodayWorkout {
   };
 }
 
+/** The coach's day-scoped edit, as the panel understands "today". */
+function todayFromSession(
+  session: WorkoutSession,
+  plan: Plan | null,
+): TodayWorkout {
+  return {
+    dayLabel: session.dayLabel,
+    focus: session.focus || plan?.name || "Today's session",
+    minutes: session.targetMinutes ?? plan?.minutesPerSession ?? 45,
+    exercises: session.exercises,
+    adjusted: session.adjustment
+      ? {
+          reason: session.adjustment.reason,
+          fromMinutes:
+            session.adjustment.fromMinutes ?? plan?.minutesPerSession ?? 45,
+        }
+      : undefined,
+  };
+}
+
 function storedMessagesToUi(messages: StoredMessage[]): UIMessage[] {
   return messages.map((message) => {
     const parts: UIMessage["parts"] = [];
@@ -103,7 +125,16 @@ export function useChatConversation(
   initialData?: ConversationData,
 ) {
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/coach/chat" }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/coach/chat",
+        // Resolved per request, so a tab left open across midnight still
+        // writes day-scoped edits to the right date.
+        body: () => {
+          const { date, dayLabel } = getTodayRef();
+          return { todayDate: date, todayDayLabel: dayLabel };
+        },
+      }),
     [],
   );
 
@@ -186,6 +217,15 @@ export function useChatConversation(
     };
   }, [setMessages]);
 
+  const highlightPanel = useCallback((tab: PanelTab) => {
+    setPanel((prev) => ({ ...prev, tab, highlightTab: tab }));
+    setTimeout(() => {
+      setPanel((prev) =>
+        prev.highlightTab === tab ? { ...prev, highlightTab: null } : prev,
+      );
+    }, 1600);
+  }, []);
+
   // Sync the panel as soon as a plan_created block streams in — the plan is
   // already saved server-side by this point, so there is no explicit accept step.
   const syncedPlanBlockIds = useRef(new Set<string>());
@@ -193,13 +233,24 @@ export function useChatConversation(
     for (const message of realChat.messages) {
       const widgetPart = message.parts.find(isDataWidgetPart);
       const block = widgetPart?.data;
-      if (
-        !block ||
-        (block.type !== "plan_created" && block.type !== "plan_updated")
-      )
-        continue;
+      if (!block) continue;
+
+      const isPlanBlock =
+        block.type === "plan_created" || block.type === "plan_updated";
+      if (!isPlanBlock && block.type !== "session_adjusted") continue;
       if (syncedPlanBlockIds.current.has(block.id)) continue;
       syncedPlanBlockIds.current.add(block.id);
+
+      if (block.type === "session_adjusted") {
+        // Today changed, the week didn't — keep the plan, repaint today.
+        setPanel((prev) => ({
+          ...prev,
+          today: todayFromSession(block.session, prev.plan),
+        }));
+        setDayLog(sessionToDayLog(block.session));
+        highlightPanel("today");
+        continue;
+      }
 
       const plan = block.plan;
       setHasPlan(true);
@@ -209,7 +260,7 @@ export function useChatConversation(
         today: todayFromPlan(plan),
       }));
     }
-  }, [realChat.messages]);
+  }, [realChat.messages, highlightPanel]);
 
   const isReady = realChat.status === "ready";
   const isStreaming = realChat.status === "streaming";
@@ -257,15 +308,6 @@ export function useChatConversation(
       };
     });
   }, [realChat.messages, isStreaming]);
-
-  const highlightPanel = useCallback((tab: PanelTab) => {
-    setPanel((prev) => ({ ...prev, tab, highlightTab: tab }));
-    setTimeout(() => {
-      setPanel((prev) =>
-        prev.highlightTab === tab ? { ...prev, highlightTab: null } : prev,
-      );
-    }, 1600);
-  }, []);
 
   const sendText = useCallback(
     (text: string) => {
@@ -342,8 +384,11 @@ export function useChatConversation(
           focus: prev.today?.focus ?? "Adjusted session",
           minutes: toMinutes,
           exercises: prev.today?.exercises ?? [],
-          adjusted: {
-            reason: "Lower energy today",
+          // The coach writes the real adjustment through adjust_today_session
+          // and it arrives as a session_adjusted sync, reason and all. Only
+          // describe the change here if no saved one exists.
+          adjusted: prev.today?.adjusted ?? {
+            reason: "Adjusted for today",
             fromMinutes: prev.today?.minutes ?? toMinutes,
             fromEquipment,
             toEquipment,
