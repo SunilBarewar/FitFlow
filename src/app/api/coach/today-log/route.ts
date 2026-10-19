@@ -1,18 +1,18 @@
-import { Types } from "mongoose";
-import type {
-  DayLog,
-  ExerciseLogEntry,
-  ExerciseLogStatus,
-} from "@/features/chat/types";
+import type { ExerciseLogStatus } from "@/features/chat/types";
+import { sessionToDayLog } from "@/features/workout/lib/adapters";
+import {
+  ensureSession,
+  setExerciseStatus,
+} from "@/features/workout/lib/session-store";
 import { getSessionFromCookies } from "@/lib/auth/session";
-import { connectDB } from "@/lib/db";
+import { isDateKey, isWithinServerDayWindow } from "@/lib/date/today";
 import { apiError } from "@/lib/utils/http";
-import { ConversationModel } from "@/models/conversation";
 
 // ---------------------------------------------------------------------------
 // PATCH /api/coach/today-log
 // Marks one exercise done/skipped/pending for a given date, with an optional
-// note. Logs are kept per-date so the Today tab's state survives a reload.
+// note. Request and response shapes are unchanged — the state now lives in
+// workout_sessions (see docs/workout-home-page.md).
 // ---------------------------------------------------------------------------
 
 type PatchBody = {
@@ -39,7 +39,7 @@ export async function PATCH(request: Request) {
   }
 
   if (
-    !body?.date ||
+    !isDateKey(body?.date) ||
     !body.dayLabel ||
     !body.exerciseId ||
     !VALID_STATUSES.includes(body.status)
@@ -47,51 +47,25 @@ export async function PATCH(request: Request) {
     return apiError("Invalid today-log update.", 400, "VALIDATION_ERROR");
   }
 
-  await connectDB();
-
-  const userId = new Types.ObjectId(session.sub);
-  const existing = await ConversationModel.findOne({ userId }).lean();
-  if (!existing) {
-    return apiError("No conversation yet.", 404, "NOT_FOUND");
+  if (!isWithinServerDayWindow(body.date)) {
+    return apiError("That date is out of range.", 400, "VALIDATION_ERROR");
   }
 
-  const dailyLogs: DayLog[] = (existing.dailyLogs ?? []).map((log) => ({
-    date: log.date,
-    dayLabel: log.dayLabel,
-    entries: log.entries.map((entry) => ({
-      exerciseId: entry.exerciseId,
-      status: entry.status as ExerciseLogStatus,
-      note: entry.note ?? undefined,
-    })),
-  }));
-
-  let dayLog = dailyLogs.find((log) => log.date === body.date);
-  if (!dayLog) {
-    dayLog = { date: body.date, dayLabel: body.dayLabel, entries: [] };
-    dailyLogs.push(dayLog);
-  } else {
-    dayLog.dayLabel = body.dayLabel;
+  const ensured = await ensureSession(session.sub, body.date, body.dayLabel);
+  if (!ensured) {
+    return apiError("No active plan yet.", 404, "NOT_FOUND");
   }
 
-  const entryIndex = dayLog.entries.findIndex(
-    (entry) => entry.exerciseId === body.exerciseId,
+  const updated = await setExerciseStatus(
+    session.sub,
+    body.date,
+    body.exerciseId,
+    body.status,
+    body.note,
   );
-  const nextEntry: ExerciseLogEntry = {
-    exerciseId: body.exerciseId,
-    status: body.status,
-    note: body.note || undefined,
-  };
-  if (entryIndex >= 0) {
-    dayLog.entries[entryIndex] = nextEntry;
-  } else {
-    dayLog.entries.push(nextEntry);
+  if (!updated) {
+    return apiError("No session for that date.", 404, "NOT_FOUND");
   }
 
-  await ConversationModel.findOneAndUpdate(
-    { userId },
-    { dailyLogs },
-    { new: true },
-  );
-
-  return Response.json({ todayLog: dayLog });
+  return Response.json({ todayLog: sessionToDayLog(updated) });
 }

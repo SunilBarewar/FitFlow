@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getTodayRef } from "@/lib/date/today";
 import type {
   ConversationData,
   StoredMessage,
@@ -54,17 +55,6 @@ function coachProgressFromMessages(
   const progressParts = last.parts.filter(isCoachProgressPart);
   const latest = progressParts.at(-1);
   return latest?.data ?? null;
-}
-
-/** The client's notion of "today" — a (date, weekday) pair sent to the
- * server with every log write/read so stats are computed against exactly
- * what the UI itself treats as today. */
-function getTodayRef(): { date: string; dayLabel: string } {
-  const now = new Date();
-  return {
-    date: now.toISOString().slice(0, 10),
-    dayLabel: now.toLocaleDateString("en-US", { weekday: "long" }),
-  };
 }
 
 function todayFromPlan(plan: Plan): TodayWorkout {

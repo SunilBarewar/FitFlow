@@ -9,6 +9,7 @@ import type {
   ExerciseLogStatus,
   TodayWorkout,
 } from "@/features/chat/types";
+import { toDateKey } from "@/lib/date/today";
 import { exerciseImageUrl } from "@/lib/exercises/image-url";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -28,7 +29,7 @@ type ExerciseState = { status: ExerciseLogStatus; note?: string };
 type RowVariant = "done" | "skipped" | "current" | "next" | "queued";
 
 function todayDateKey() {
-  return new Date().toISOString().slice(0, 10);
+  return toDateKey(new Date());
 }
 
 function stateFor(

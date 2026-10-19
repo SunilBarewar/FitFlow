@@ -1,15 +1,8 @@
 import { redirect } from "next/navigation";
 import { getConversationData } from "@/features/chat/lib/get-conversation-data";
 import { getSessionFromCookies } from "@/lib/auth/session";
+import { getTodayRef } from "@/lib/date/today";
 import { ChatPageClient } from "./chat-page-client";
-
-function getTodayRef() {
-  const now = new Date();
-  return {
-    date: now.toISOString().slice(0, 10),
-    dayLabel: now.toLocaleDateString("en-US", { weekday: "long" }),
-  };
-}
 
 export default async function ChatPage() {
   const session = await getSessionFromCookies();

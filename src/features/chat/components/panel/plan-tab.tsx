@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
 import type { DayLog, Exercise, Plan, PlanDay } from "@/features/chat/types";
+import { toDayLabel } from "@/lib/date/today";
 import { exerciseImageUrl } from "@/lib/exercises/image-url";
 import { cn } from "@/lib/utils/cn";
 import { Caret, KitMark, Tick, WeekMark } from "../ui/glyphs";
@@ -21,7 +22,7 @@ const WEEKDAYS = [
 type WeekDayState = "done" | "today" | "upcoming" | "rest";
 
 function todayName() {
-  return new Date().toLocaleDateString("en-US", { weekday: "long" });
+  return toDayLabel(new Date());
 }
 
 function orderFromToday(days: PlanDay[]): PlanDay[] {

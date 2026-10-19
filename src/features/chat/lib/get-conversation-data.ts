@@ -1,6 +1,8 @@
 import "server-only";
 import { Types } from "mongoose";
 import type { ChatBlock, DayLog, Plan } from "@/features/chat/types";
+import { sessionToDayLog } from "@/features/workout/lib/adapters";
+import { ensureSession } from "@/features/workout/lib/session-store";
 import { connectDB } from "@/lib/db";
 import { ConversationModel } from "@/models/conversation";
 import { MessageModel } from "@/models/message";
@@ -46,10 +48,10 @@ export async function getConversationData(
     .limit(HISTORY_LIMIT)
     .lean();
 
-  const dailyLogs = (conversation.dailyLogs ?? []) as DayLog[];
-  const todayLog =
-    dailyLogs.find((log) => log.date === date && log.dayLabel === dayLabel) ??
-    null;
+  // Materializes today's session from the active plan on first open; null
+  // when there is no plan yet, which is also when the chat panel is hidden.
+  const session = await ensureSession(userId, date, dayLabel);
+  const todayLog = session ? sessionToDayLog(session) : null;
 
   return {
     hasPlan: Boolean(conversation.hasPlan && conversation.activePlan),

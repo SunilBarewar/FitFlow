@@ -1,5 +1,10 @@
 import { Types } from "mongoose";
-import type { DayLog, Plan } from "@/features/chat/types";
+import type { Plan } from "@/features/chat/types";
+import { sessionToDayLog } from "@/features/workout/lib/adapters";
+import {
+  deleteAllSessions,
+  ensureSession,
+} from "@/features/workout/lib/session-store";
 import { getSessionFromCookies } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db";
 import { apiError } from "@/lib/utils/http";
@@ -41,13 +46,11 @@ export async function GET(request: Request) {
     .limit(HISTORY_LIMIT)
     .lean();
 
-  const dailyLogs = (conversation.dailyLogs ?? []) as DayLog[];
-  const todayLog =
+  const workoutSession =
     todayDate && todayDayLabel
-      ? (dailyLogs.find(
-          (log) => log.date === todayDate && log.dayLabel === todayDayLabel,
-        ) ?? null)
+      ? await ensureSession(session.sub, todayDate, todayDayLabel)
       : null;
+  const todayLog = workoutSession ? sessionToDayLog(workoutSession) : null;
 
   return Response.json({
     conversationId: conversation._id.toString(),
@@ -94,10 +97,12 @@ export async function DELETE() {
   }
 
   await MessageModel.deleteMany({ conversationId: conversation._id });
+  // The reset dialog promises every logged set goes with the plan.
+  await deleteAllSessions(session.sub);
 
   await ConversationModel.updateOne(
     { _id: conversation._id },
-    { $set: { hasPlan: false, activePlan: null, dailyLogs: [] } },
+    { $set: { hasPlan: false, activePlan: null } },
   );
 
   return Response.json({ cleared: true });

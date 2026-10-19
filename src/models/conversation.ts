@@ -47,28 +47,6 @@ const planSchema = new Schema(
   { _id: false },
 );
 
-const exerciseLogEntrySchema = new Schema(
-  {
-    exerciseId: { type: String, required: true },
-    status: {
-      type: String,
-      enum: ["pending", "done", "skipped"],
-      default: "pending",
-    },
-    note: { type: String, default: null },
-  },
-  { _id: false },
-);
-
-const dayLogSchema = new Schema(
-  {
-    date: { type: String, required: true },
-    dayLabel: { type: String, required: true },
-    entries: { type: [exerciseLogEntrySchema], default: [] },
-  },
-  { _id: false },
-);
-
 // ---------------------------------------------------------------------------
 // Conversation schema — exactly one document per user
 // ---------------------------------------------------------------------------
@@ -97,13 +75,6 @@ const conversationSchema = new Schema(
     activePlan: {
       type: planSchema,
       default: null,
-    },
-    /**
-     * One entry per calendar date the user marked exercises done/skipped on.
-     */
-    dailyLogs: {
-      type: [dayLogSchema],
-      default: [],
     },
   },
   { timestamps: true },

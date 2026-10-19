@@ -1,4 +1,14 @@
 export {
+  type Conversation,
+  type ConversationDocument,
+  ConversationModel,
+} from "./conversation";
+export {
+  type Message,
+  type MessageDocument,
+  MessageModel,
+} from "./message";
+export {
   type User,
   type UserDocument,
   UserModel,
@@ -6,13 +16,7 @@ export {
 } from "./user";
 
 export {
-  type Conversation,
-  type ConversationDocument,
-  ConversationModel,
-} from "./conversation";
-
-export {
-  type Message,
-  type MessageDocument,
-  MessageModel,
-} from "./message";
+  type WorkoutSessionDoc,
+  type WorkoutSessionDocument,
+  WorkoutSessionModel,
+} from "./workout-session";
