@@ -7,10 +7,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { FitFlowLogo } from "@/components/brand/fitflow-logo";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/fit-toaster";
 import { useSignIn } from "@/features/auth/hooks/use-sign-in";
 import { getErrorMessage } from "@/features/auth/lib/api-client";
 import { cn } from "@/lib/utils/cn";
-/* ─── Sign In Form ─── */
+
+function showOAuthComingSoon(provider: string) {
+  toast.info(`${provider} sign-in isn't available yet`, {
+    description: "Use email and password for now — we're working on it.",
+  });
+}
+
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,6 +186,7 @@ function SignInForm() {
             <button
               key={label}
               type="button"
+              onClick={() => showOAuthComingSoon(label)}
               className="flex items-center justify-center gap-2 h-12 rounded-xl border border-border bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
               <span className="text-base font-bold">{icon}</span>
