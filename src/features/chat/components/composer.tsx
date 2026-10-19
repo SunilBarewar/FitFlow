@@ -17,13 +17,17 @@ export function Composer({
   placeholder = "Ask your coach anything…",
   autoFocus = false,
   variant = "inline",
+  initialDraft = "",
 }: {
   onSend: (text: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
   variant?: "inline" | "hero";
+  /** Seeded from ?prefill= when the user arrived here from the home page
+   * asking for something specific. Never sent on their behalf. */
+  initialDraft?: string;
 }) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialDraft);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canSend = draft.trim().length > 0;
   const isHero = variant === "hero";

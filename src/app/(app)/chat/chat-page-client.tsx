@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/fit-toaster";
 import { useSignOut } from "@/features/auth/hooks/use-sign-out";
@@ -21,7 +21,11 @@ export function ChatPageClient({
   initialData: ConversationData;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const signOut = useSignOut();
+  // Arrived from the workout page with a question already in mind. It lands in
+  // the composer for them to edit or send — never sent on their behalf.
+  const [prefill] = useState(() => searchParams.get("prefill") ?? "");
   const conversation = useChatConversation(userName, initialData);
   const [view, setView] = useState<WorkspaceView>("coach");
 
@@ -85,7 +89,11 @@ export function ChatPageClient({
       />
 
       <main className="flex min-h-0 flex-1 flex-col">
-        <ChatShell conversation={conversation} view={view} />
+        <ChatShell
+          conversation={conversation}
+          view={view}
+          initialDraft={prefill}
+        />
       </main>
     </div>
   );

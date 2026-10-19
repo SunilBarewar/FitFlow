@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils/cn";
 import { SegmentedSwitch } from "./ui/controls";
-import { AccountMark, ExitMark, RestartMark } from "./ui/glyphs";
+import { AccountMark, ExitMark, HomeMark, RestartMark } from "./ui/glyphs";
 
 export type WorkspaceView = "coach" | "plan";
 
@@ -203,19 +203,32 @@ export function ChatHeader({
             ) : null}
           </AnimatePresence>
 
-          <button
-            ref={triggerRef}
-            type="button"
-            disabled={busy}
-            aria-label="Account menu"
-            aria-expanded={open}
-            aria-haspopup="menu"
-            aria-controls={open ? menuId : undefined}
-            onClick={() => setOpen((value) => !value)}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-soft transition-colors hover:bg-sunken disabled:pointer-events-none disabled:opacity-50"
-          >
-            <AccountMark size={18} />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {showViewSwitch ? (
+              <Link
+                href="/home"
+                aria-label="Today's workout"
+                className="flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
+              >
+                <HomeMark size={16} />
+                <span className="hidden sm:inline">Today</span>
+              </Link>
+            ) : null}
+
+            <button
+              ref={triggerRef}
+              type="button"
+              disabled={busy}
+              aria-label="Account menu"
+              aria-expanded={open}
+              aria-haspopup="menu"
+              aria-controls={open ? menuId : undefined}
+              onClick={() => setOpen((value) => !value)}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-soft transition-colors hover:bg-sunken disabled:pointer-events-none disabled:opacity-50"
+            >
+              <AccountMark size={18} />
+            </button>
+          </div>
         </div>
         {menu}
       </header>

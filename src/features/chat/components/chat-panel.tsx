@@ -10,8 +10,11 @@ import { EmptyState } from "./empty-state";
 
 export function ChatPanel({
   conversation,
+  initialDraft,
 }: {
   conversation: ReturnType<typeof useChatConversation>;
+  /** A question carried over from the home page (?prefill=). */
+  initialDraft?: string;
 }) {
   const {
     messages,
@@ -69,7 +72,13 @@ export function ChatPanel({
   }, []);
 
   if (messages.length === 0) {
-    return <EmptyState userName={userName} onSend={sendText} />;
+    return (
+      <EmptyState
+        userName={userName}
+        onSend={sendText}
+        initialDraft={initialDraft}
+      />
+    );
   }
 
   return (
@@ -107,7 +116,7 @@ export function ChatPanel({
 
       <div className="shrink-0 px-4 pt-1 pb-3 sm:px-6 sm:pb-4">
         <div className="mx-auto max-w-2xl">
-          <Composer onSend={sendText} />
+          <Composer onSend={sendText} initialDraft={initialDraft} />
         </div>
       </div>
     </div>

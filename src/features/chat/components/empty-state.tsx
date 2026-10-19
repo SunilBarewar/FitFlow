@@ -34,9 +34,12 @@ function timeOfDayGreeting(date: Date) {
 export function EmptyState({
   userName,
   onSend,
+  initialDraft,
 }: {
   userName: string;
   onSend: (text: string) => void;
+  /** A question carried over from the workout page (?prefill=). */
+  initialDraft?: string;
 }) {
   const greeting = useMemo(() => timeOfDayGreeting(new Date()), []);
 
@@ -70,6 +73,7 @@ export function EmptyState({
             onSend={onSend}
             variant="hero"
             placeholder="Tell me anything — how you're feeling, what you want to train"
+            initialDraft={initialDraft}
           />
         </motion.div>
 

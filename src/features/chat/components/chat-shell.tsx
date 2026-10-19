@@ -19,9 +19,11 @@ const SURFACE =
 export function ChatShell({
   conversation,
   view,
+  initialDraft,
 }: {
   conversation: ReturnType<typeof useChatConversation>;
   view: WorkspaceView;
+  initialDraft?: string;
 }) {
   const { hasPlan } = conversation;
   const reduceMotion = useReducedMotion();
@@ -37,7 +39,7 @@ export function ChatShell({
         )}
       >
         <div className={SURFACE}>
-          <ChatPanel conversation={conversation} />
+          <ChatPanel conversation={conversation} initialDraft={initialDraft} />
         </div>
       </section>
 

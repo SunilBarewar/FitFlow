@@ -1,6 +1,6 @@
 # Workout Home — Plan & Implementation Spec
 
-> **Status:** Phase 1 (backend foundation) implemented · Phases 2–3 pending
+> **Status:** Phases 1–2 implemented (backend + the `/home` page) · Phase 3 pending
 > **Scope:** a new authenticated `/home` surface where a user manages their active plan and logs today's session without talking to the coach — plus the backend changes that make per-day session state a first-class thing.
 > **Companion docs:** [`design-system.md`](./design-system.md) (all UI work), [`generative-chat-ui.md`](./generative-chat-ui.md) (chat contract — unchanged by this work).
 
@@ -279,8 +279,15 @@ New routes under `src/app/api/workout/`:
 ```
 src/app/(app)/home/page.tsx          — RSC: session check → plan check → data load
 src/app/(app)/home/home-page-client.tsx
-src/app/(app)/home/loading.tsx       — skeleton, mirroring chat/loading.tsx
 ```
+
+**No `loading.tsx` here, deliberately.** A `loading.tsx` opens a streaming
+boundary, and once the response has started streaming Next can no longer answer
+with a 307 — the no-plan redirect degrades into
+`<meta http-equiv="refresh" content="1;url=/chat">`, so a user without a plan
+watches a workout skeleton for a second before being bounced. Without the file
+the page answers in ~200ms with a clean 307 for the redirect case, which is the
+better trade for three indexed queries.
 
 The page is a server component:
 
@@ -375,7 +382,7 @@ Each phase ends at a point where the app is shippable and `/chat` is untouched.
 
 *Done when:* the chat Today card still works end to end, and its state now lives in `workout_sessions`.
 
-### Phase 2 — The home page
+### Phase 2 — The home page — **done**
 8. `applySessionAdjustment`, `resetSessionToPlan` in the store.
 9. The six `/api/workout/*` routes.
 10. `/home` route, redirect logic, `constants.ts` + `proxy.ts` + post-sign-in target.
