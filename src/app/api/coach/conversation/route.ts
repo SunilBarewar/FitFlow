@@ -1,6 +1,5 @@
 import { Types } from "mongoose";
 import type { Plan } from "@/features/chat/types";
-import { sessionToDayLog } from "@/features/workout/lib/adapters";
 import {
   deleteAllSessions,
   ensureSession,
@@ -50,13 +49,12 @@ export async function GET(request: Request) {
     todayDate && todayDayLabel
       ? await ensureSession(session.sub, todayDate, todayDayLabel)
       : null;
-  const todayLog = workoutSession ? sessionToDayLog(workoutSession) : null;
 
   return Response.json({
     conversationId: conversation._id.toString(),
     hasPlan: conversation.hasPlan,
     activePlan: conversation.activePlan ?? null,
-    todayLog,
+    todaySession: workoutSession,
     messages: messages.map((m) => ({
       id: m._id.toString(),
       role: m.role,

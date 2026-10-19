@@ -1,8 +1,8 @@
 import "server-only";
 import { Types } from "mongoose";
-import type { ChatBlock, DayLog, Plan } from "@/features/chat/types";
-import { sessionToDayLog } from "@/features/workout/lib/adapters";
+import type { ChatBlock, Plan } from "@/features/chat/types";
 import { ensureSession } from "@/features/workout/lib/session-store";
+import type { WorkoutSession } from "@/features/workout/types";
 import { connectDB } from "@/lib/db";
 import { ConversationModel } from "@/models/conversation";
 import { MessageModel } from "@/models/message";
@@ -19,7 +19,9 @@ export type StoredMessage = {
 export type ConversationData = {
   hasPlan: boolean;
   activePlan: Plan | null;
-  todayLog: DayLog | null;
+  /** Today's workout session — the same one /home edits, and what the Today
+   * tab renders. The panel's DayLog is derived from it on the client. */
+  todaySession: WorkoutSession | null;
   messages: StoredMessage[];
 };
 
@@ -51,12 +53,11 @@ export async function getConversationData(
   // Materializes today's session from the active plan on first open; null
   // when there is no plan yet, which is also when the chat panel is hidden.
   const session = await ensureSession(userId, date, dayLabel);
-  const todayLog = session ? sessionToDayLog(session) : null;
 
   return {
     hasPlan: Boolean(conversation.hasPlan && conversation.activePlan),
     activePlan: (conversation.activePlan as Plan) ?? null,
-    todayLog,
+    todaySession: session,
     messages: rawMessages.map((m) => ({
       id: m._id.toString(),
       role: m.role as "user" | "assistant",

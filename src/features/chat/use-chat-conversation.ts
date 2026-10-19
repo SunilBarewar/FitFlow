@@ -4,6 +4,11 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sessionToDayLog } from "@/features/workout/lib/adapters";
+import {
+  clearSyncedSession,
+  publishSession,
+  subscribeToSession,
+} from "@/features/workout/lib/session-sync";
 import type { WorkoutSession } from "@/features/workout/types";
 import { getTodayRef } from "@/lib/date/today";
 import type {
@@ -155,15 +160,77 @@ export function useChatConversation(
 
   const [hasPlan, setHasPlan] = useState(Boolean(initialData?.hasPlan));
   const [startNewChatPending, setStartNewChatPending] = useState(false);
-  const [todayLog, setDayLog] = useState<DayLog | null>(
-    initialData?.todayLog ?? null,
+  // Today's session, exactly as /home has it. The panel's Today tab and its
+  // DayLog are both read off this, so an edit made on either page shows up on
+  // the other instead of each surface keeping its own idea of today.
+  const [todaySession, setTodaySession] = useState<WorkoutSession | null>(
+    initialData?.todaySession ?? null,
   );
+  const sessionRef = useRef(todaySession);
+  sessionRef.current = todaySession;
   const [panel, setPanel] = useState<PanelState>({
     tab: "today",
     plan: initialPlan,
     today: initialPlan ? todayFromPlan(initialPlan) : null,
     highlightTab: null,
   });
+
+  useEffect(() => {
+    if (todaySession) publishSession(todaySession);
+  }, [todaySession]);
+
+  useEffect(
+    () =>
+      subscribeToSession((incoming) => {
+        const held = sessionRef.current;
+        // Our own publish coming back around — nothing new to apply. A
+        // different date is another tab that crossed midnight, not today.
+        if (!incoming || incoming === held) return;
+        if (held && incoming.date !== held.date) return;
+        setTodaySession(incoming);
+      }),
+    [],
+  );
+
+  const refreshSession = useCallback(async () => {
+    const { date, dayLabel } = getTodayRef();
+    try {
+      const response = await fetch(
+        `/api/workout/today?date=${date}&dayLabel=${encodeURIComponent(dayLabel)}`,
+      );
+      if (!response.ok) return;
+      const data = (await response.json()) as { session: WorkoutSession };
+      setTodaySession(data.session);
+    } catch {
+      // The panel keeps what it has; a stale card beats an error the user
+      // can't act on.
+    }
+  }, []);
+
+  // Mirrors the home page: re-read only after the tab was genuinely hidden,
+  // which covers a session changed on another device or in another tab that
+  // the in-page channel never reached.
+  const lastSessionRefresh = useRef(0);
+  useEffect(() => {
+    let tabWasHidden = document.visibilityState === "hidden";
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        tabWasHidden = true;
+        return;
+      }
+      if (!tabWasHidden) return;
+      tabWasHidden = false;
+      if (Date.now() - lastSessionRefresh.current < 30_000) return;
+      lastSessionRefresh.current = Date.now();
+      void refreshSession();
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refreshSession]);
 
   useEffect(() => {
     // Skip the fetch when server-side data was already provided on mount.
@@ -186,14 +253,14 @@ export function useChatConversation(
         const data = (await response.json()) as {
           hasPlan: boolean;
           activePlan: Plan | null;
-          todayLog: DayLog | null;
+          todaySession: WorkoutSession | null;
           messages: StoredMessage[];
         };
 
         if (cancelled || epochAtStart !== historyEpoch.current) return;
 
         setHasPlan(Boolean(data.hasPlan && data.activePlan));
-        setDayLog(data.todayLog ?? null);
+        setTodaySession(data.todaySession ?? null);
 
         const plan = data.hasPlan ? data.activePlan : null;
         setPanel((prev) => ({
@@ -243,11 +310,7 @@ export function useChatConversation(
 
       if (block.type === "session_adjusted") {
         // Today changed, the week didn't — keep the plan, repaint today.
-        setPanel((prev) => ({
-          ...prev,
-          today: todayFromSession(block.session, prev.plan),
-        }));
-        setDayLog(sessionToDayLog(block.session));
+        setTodaySession(block.session);
         highlightPanel("today");
         continue;
       }
@@ -259,8 +322,11 @@ export function useChatConversation(
         plan,
         today: todayFromPlan(plan),
       }));
+      // A new plan re-materializes an untouched session server-side, so the
+      // session on screen is about to be the wrong one.
+      void refreshSession();
     }
-  }, [realChat.messages, highlightPanel]);
+  }, [realChat.messages, highlightPanel, refreshSession]);
 
   const isReady = realChat.status === "ready";
   const isStreaming = realChat.status === "streaming";
@@ -309,6 +375,21 @@ export function useChatConversation(
     });
   }, [realChat.messages, isStreaming]);
 
+  // The session describes today; the plan only describes the week. The plan
+  // is the fallback for the window before a session exists.
+  const today = useMemo(
+    () =>
+      todaySession ? todayFromSession(todaySession, panel.plan) : panel.today,
+    [todaySession, panel.plan, panel.today],
+  );
+
+  const panelView = useMemo(() => ({ ...panel, today }), [panel, today]);
+
+  const todayLog: DayLog | null = useMemo(
+    () => (todaySession ? sessionToDayLog(todaySession) : null),
+    [todaySession],
+  );
+
   const sendText = useCallback(
     (text: string) => {
       realChat.sendMessage({ text });
@@ -347,36 +428,46 @@ export function useChatConversation(
 
   const setExerciseLog = useCallback(
     (exerciseId: string, status: ExerciseLogStatus, note?: string) => {
-      const dayLabel = panel.today?.dayLabel;
-      if (!dayLabel) return;
-      const { date } = getTodayRef();
+      const session = sessionRef.current;
+      if (!session) return;
+      const { date, dayLabel } = session;
 
-      setDayLog((prev) => {
-        const sameDay = prev?.date === date && prev?.dayLabel === dayLabel;
-        const entries = sameDay ? [...prev.entries] : [];
-        const index = entries.findIndex(
-          (entry) => entry.exerciseId === exerciseId,
-        );
-        const nextEntry = { exerciseId, status, note };
-        if (index >= 0) {
-          entries[index] = nextEntry;
-        } else {
-          entries.push(nextEntry);
+      // Optimistic, same as the home page: the tap lands now and the server's
+      // version replaces it a moment later.
+      setTodaySession({
+        ...session,
+        exercises: session.exercises.map((exercise) =>
+          exercise.id === exerciseId
+            ? { ...exercise, status, note: note ?? undefined }
+            : exercise,
+        ),
+      });
+
+      void (async () => {
+        try {
+          const response = await fetch("/api/coach/today-log", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date, dayLabel, exerciseId, status, note }),
+          });
+          if (!response.ok) throw new Error("save failed");
+          const data = (await response.json()) as {
+            session?: WorkoutSession;
+          };
+          if (data.session) setTodaySession(data.session);
+        } catch {
+          setTodaySession(session);
         }
-        return { date, dayLabel, entries };
-      });
-
-      void fetch("/api/coach/today-log", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, dayLabel, exerciseId, status, note }),
-      });
+      })();
     },
-    [panel.today?.dayLabel],
+    [],
   );
 
   const startAdjustedWorkout = useCallback(
     (toMinutes: number, fromEquipment: string, toEquipment: string) => {
+      // Only the fallback view gets this sketch of the change. Once today's
+      // session exists it is what the panel renders, and the coach's own
+      // adjust_today_session write arrives as a session_adjusted sync.
       setPanel((prev) => ({
         ...prev,
         today: {
@@ -454,7 +545,8 @@ export function useChatConversation(
       setMessages([]);
       syncedPlanBlockIds.current.clear();
       setHasPlan(false);
-      setDayLog(null);
+      setTodaySession(null);
+      clearSyncedSession();
       setPanel({ tab: "today", plan: null, today: null, highlightTab: null });
       return true;
     } catch {
@@ -473,7 +565,7 @@ export function useChatConversation(
     showCoachActivity,
     coachActivityLabel,
     error: realChat.error,
-    panel,
+    panel: panelView,
     todayLog,
     setExerciseLog,
     startSuggestion,

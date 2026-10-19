@@ -73,5 +73,10 @@ export async function PATCH(request: Request) {
     return apiError("No session for that date.", 404, "NOT_FOUND");
   }
 
-  return Response.json({ todayLog: sessionToDayLog(updated) });
+  // The session goes back too: the chat panel renders today straight from it,
+  // and publishes it to whatever else is watching today's session.
+  return Response.json({
+    todayLog: sessionToDayLog(updated),
+    session: updated,
+  });
 }

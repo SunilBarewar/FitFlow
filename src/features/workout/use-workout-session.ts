@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ExerciseLogStatus } from "@/features/chat/types";
 import { getTodayRef } from "@/lib/date/today";
+import { publishSession, subscribeToSession } from "./lib/session-sync";
 import type {
   SessionAdjustmentPatch,
   SessionStatus,
@@ -35,6 +36,26 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
   const queues = useRef(new Map<string, Promise<unknown>>());
   const latest = useRef(initial.session);
   latest.current = session;
+
+  // Today's session is shared with /chat, which renders the same session in
+  // its Today tab. Publish every version this page lands on, and take any the
+  // chat side produces while the user is over there.
+  useEffect(() => {
+    publishSession(session);
+  }, [session]);
+
+  useEffect(
+    () =>
+      subscribeToSession((incoming) => {
+        // Our own publish comes back around — nothing new to apply. A
+        // different date is another tab that crossed midnight, not today.
+        if (!incoming || incoming === latest.current) return;
+        if (incoming.date !== latest.current.date) return;
+        setSession(incoming);
+        void refreshWeek(setWeek, incoming.date);
+      }),
+    [],
+  );
 
   const refreshInFlight = useRef(false);
   const refresh = useCallback(async () => {

@@ -151,7 +151,7 @@ export function SessionHero({
                   whileTap={{ scale: 0.99 }}
                   onClick={onStart}
                   disabled={pendingAction !== null}
-                  className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full bg-ink px-4 text-left text-white transition-colors hover:bg-ink-soft disabled:opacity-60"
+                  className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full bg-ink px-4 text-left text-white transition-colors hover:bg-ink-soft disabled:opacity-60 p-3"
                 >
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-ink">
                     <PlayMark size={14} className="ml-0.5" />
