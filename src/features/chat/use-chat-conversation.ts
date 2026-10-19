@@ -10,6 +10,7 @@ import type {
 import type {
   ChatBlock,
   ChatMessage,
+  CoachProgress,
   DayLog,
   ExerciseLogStatus,
   PanelTab,
@@ -25,9 +26,34 @@ type PanelState = {
 };
 
 type DataWidgetPart = { type: "data-widget"; data: ChatBlock };
+type CoachProgressPart = { type: "data-coach-progress"; data: CoachProgress };
 
 function isDataWidgetPart(part: { type: string }): part is DataWidgetPart {
   return part.type === "data-widget";
+}
+
+function isCoachProgressPart(part: {
+  type: string;
+}): part is CoachProgressPart {
+  return part.type === "data-coach-progress";
+}
+
+function textFromUiMessage(message: UIMessage | undefined): string {
+  if (!message) return "";
+  return message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("");
+}
+
+function coachProgressFromMessages(
+  messages: UIMessage[],
+): CoachProgress | null {
+  const last = messages.at(-1);
+  if (!last || last.role !== "assistant") return null;
+  const progressParts = last.parts.filter(isCoachProgressPart);
+  const latest = progressParts.at(-1);
+  return latest?.data ?? null;
 }
 
 /** The client's notion of "today" — a (date, weekday) pair sent to the
@@ -177,7 +203,11 @@ export function useChatConversation(
     for (const message of realChat.messages) {
       const widgetPart = message.parts.find(isDataWidgetPart);
       const block = widgetPart?.data;
-      if (!block || block.type !== "plan_created") continue;
+      if (
+        !block ||
+        (block.type !== "plan_created" && block.type !== "plan_updated")
+      )
+        continue;
       if (syncedPlanBlockIds.current.has(block.id)) continue;
       syncedPlanBlockIds.current.add(block.id);
 
@@ -194,6 +224,27 @@ export function useChatConversation(
   const isReady = realChat.status === "ready";
   const isStreaming = realChat.status === "streaming";
   const isWaiting = realChat.status === "submitted";
+
+  const streamingAssistantText = useMemo(() => {
+    if (!isStreaming) return "";
+    const last = realChat.messages.at(-1);
+    if (last?.role !== "assistant") return "";
+    return textFromUiMessage(last).trim();
+  }, [isStreaming, realChat.messages]);
+
+  const showCoachActivity =
+    isWaiting || (isStreaming && streamingAssistantText.length === 0);
+
+  const coachActivityLabel = useMemo((): string | null => {
+    if (!showCoachActivity) return null;
+    const fromStream = coachProgressFromMessages(realChat.messages);
+    const steps = fromStream?.steps;
+    if (steps?.length) {
+      const active = steps.find((step) => step.status === "active");
+      return active?.label ?? steps.at(-1)?.label ?? "Thinking…";
+    }
+    return isWaiting ? "Sending…" : "Thinking…";
+  }, [isWaiting, realChat.messages, showCoachActivity]);
 
   const messages: ChatMessage[] = useMemo(() => {
     const lastMessage = realChat.messages.at(-1);
@@ -384,6 +435,8 @@ export function useChatConversation(
     messages,
     isReady,
     isWaiting,
+    showCoachActivity,
+    coachActivityLabel,
     error: realChat.error,
     panel,
     todayLog,

@@ -95,6 +95,11 @@ export type ChatBlock =
       plan: Plan;
     }
   | {
+      type: "plan_updated";
+      id: string;
+      plan: Plan;
+    }
+  | {
       type: "session_mutation";
       id: string;
       fromMinutes: number;
@@ -155,6 +160,16 @@ export type ChatBlock =
       };
       reason?: string;
     };
+
+export type CoachProgressStep = {
+  id: string;
+  label: string;
+  status: "active" | "complete";
+};
+
+export type CoachProgress = {
+  steps: CoachProgressStep[];
+};
 
 export type ChatMessage = {
   id: string;

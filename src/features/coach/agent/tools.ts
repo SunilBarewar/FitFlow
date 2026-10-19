@@ -65,6 +65,36 @@ export const coachTools = {
     },
   }),
 
+  update_plan: tool({
+    description:
+      "Silently update the active plan in the database. Use this for exercise swaps — it saves the change without showing the full plan card. After calling this, call show_widget(exercise_swap) to show the comparison card. Pass all 7 days with the full updated exercise list. Never change the plan name.",
+    inputSchema: z.object({
+      name: z.string().describe("The plan name — must match the original, never change it."),
+      daysPerWeek: z.number(),
+      minutesPerSession: z.number(),
+      days: z.array(
+        z.object({
+          label: z.string(),
+          focus: z.string(),
+          exercises: z
+            .array(
+              z.object({
+                exerciseId: z
+                  .string()
+                  .describe("Exact id from search_exercises or plan context."),
+                name: z.string(),
+                sets: z.number(),
+                reps: z.string(),
+                equipment: z.string(),
+              }),
+            )
+            .min(0),
+        }),
+      ).min(1),
+    }),
+    execute: async () => "Plan updated in database.",
+  }),
+
   show_widget: tool({
     description:
       "Render one structured UI widget. Plan setup order: experience → muscle_focus → equipment_access → session-length choice_chips. After muscle_focus, the next setup widget is usually equipment_access — never ask gym vs home in text only, and never use choice_chips for gym/home. Session length: if duration is unknown, call choice_chips with exactly four options (20–30 min, 30–45 min, 45–60 min, 60–90 min). If they already named a time, map it and do not confirm with chips. Never ask the user to pick a weekly split — you choose the default from the instructions. Never use the words beginner, intermediate, or expert. Other widgets: multi-select chips, plan preview (create or full-week update only), exercise_swap (single exercise replacement — use instead of plan_preview for one-exercise changes), session adjustment, safety notice, gentle routine, urgent care. Call this as the last action in your turn.",

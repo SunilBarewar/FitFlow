@@ -53,6 +53,10 @@ export function ChatMessageRow({
   const isUser = message.role === "user";
   const wide = !isUser && message.block && isWideBlock(message.block);
 
+  if (!isUser && !message.text && !message.block) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -181,6 +185,8 @@ function BlockRenderer({
           onViewPlan={() => conversation.viewPlan()}
         />
       );
+    case "plan_updated":
+      return null;
     case "session_mutation":
       return (
         <SessionMutationBlock
@@ -228,27 +234,29 @@ function BlockRenderer({
   }
 }
 
-export function TypingIndicator() {
+export function CoachActivityIndicator({ label }: { label: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       className="flex items-center gap-2.5"
+      role="status"
+      aria-live="polite"
+      aria-label={label}
     >
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
         <Sparkles size={13} aria-hidden />
       </span>
-      <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-muted px-3.5 py-3">
-        {[0, 1, 2].map((i) => (
-          <motion.span
-            key={i}
-            className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60"
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
-          />
-        ))}
-      </div>
+      <motion.p
+        key={label}
+        initial={{ opacity: 0.4 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className="flex min-h-7 items-center text-sm leading-none text-muted-foreground"
+      >
+        {label}
+      </motion.p>
     </motion.div>
   );
 }

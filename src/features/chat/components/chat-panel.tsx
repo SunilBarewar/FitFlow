@@ -5,7 +5,7 @@ import { AnimatePresence } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/fit-toaster";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
-import { ChatMessageRow, TypingIndicator } from "./chat-message";
+import { ChatMessageRow, CoachActivityIndicator } from "./chat-message";
 import { EmptyState } from "./empty-state";
 
 export function ChatPanel({
@@ -13,8 +13,15 @@ export function ChatPanel({
 }: {
   conversation: ReturnType<typeof useChatConversation>;
 }) {
-  const { messages, isWaiting, isReady, userName, sendText, error } =
-    conversation;
+  const {
+    messages,
+    isReady,
+    userName,
+    sendText,
+    error,
+    showCoachActivity,
+    coachActivityLabel,
+  } = conversation;
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -28,8 +35,8 @@ export function ChatPanel({
 
   const lastMessage = messages.at(-1);
   const scrollKey = lastMessage
-    ? `${messages.length}:${lastMessage.id}:${lastMessage.text?.length ?? 0}:${lastMessage.block?.type ?? "none"}:${isWaiting}:${isReady}`
-    : `empty:${isWaiting}:${isReady}`;
+    ? `${messages.length}:${lastMessage.id}:${lastMessage.text?.length ?? 0}:${lastMessage.block?.type ?? "none"}:${showCoachActivity}:${isReady}`
+    : `empty:${showCoachActivity}:${isReady}`;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scrollKey captures message growth and widget attach without relying on array identity.
   useEffect(() => {
@@ -93,7 +100,12 @@ export function ChatPanel({
                 }
               />
             ))}
-            {isWaiting ? <TypingIndicator key="typing" /> : null}
+            {showCoachActivity && coachActivityLabel ? (
+              <CoachActivityIndicator
+                key="coach-activity"
+                label={coachActivityLabel}
+              />
+            ) : null}
           </AnimatePresence>
         </div>
       </div>

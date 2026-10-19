@@ -1,7 +1,44 @@
 import { randomUUID } from "node:crypto";
-import type { ChatBlock } from "@/features/chat/types";
+import type { ChatBlock, Plan } from "@/features/chat/types";
 import { getExerciseById } from "@/lib/exercises/exercise-catalog";
 import { WidgetSchema } from "./widget-schema";
+
+type RawExercise = { exerciseId: string; name: string; sets: number; reps: string; equipment: string };
+type RawDay = { label: string; focus: string; exercises: RawExercise[] };
+
+export function buildPlan(
+  name: string,
+  daysPerWeek: number,
+  minutesPerSession: number,
+  days: RawDay[],
+): Plan {
+  return {
+    id: randomUUID(),
+    name,
+    version: 1,
+    status: "active",
+    daysPerWeek,
+    minutesPerSession,
+    days: days.map((day) => ({
+      id: randomUUID(),
+      label: day.label,
+      focus: day.focus,
+      exercises: day.exercises.map((ex) => {
+        const catalog = getExerciseById(ex.exerciseId);
+        return {
+          id: ex.exerciseId,
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          equipment: ex.equipment,
+          instructions: catalog?.instructions,
+          muscles: catalog?.primaryMuscles,
+          images: catalog?.images,
+        };
+      }),
+    })),
+  };
+}
 
 export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
   const widgetValue =
@@ -69,32 +106,7 @@ export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
       return {
         type: "plan_created",
         id,
-        plan: {
-          id: randomUUID(),
-          name: widget.name,
-          version: 1,
-          status: "active",
-          daysPerWeek: widget.daysPerWeek,
-          minutesPerSession: widget.minutesPerSession,
-          days: widget.days.map((day) => ({
-            id: randomUUID(),
-            label: day.label,
-            focus: day.focus,
-            exercises: day.exercises.map((exercise) => {
-              const catalogExercise = getExerciseById(exercise.exerciseId);
-              return {
-                id: exercise.exerciseId,
-                name: exercise.name,
-                sets: exercise.sets,
-                reps: exercise.reps,
-                equipment: exercise.equipment,
-                instructions: catalogExercise?.instructions,
-                muscles: catalogExercise?.primaryMuscles,
-                images: catalogExercise?.images,
-              };
-            }),
-          })),
-        },
+        plan: buildPlan(widget.name, widget.daysPerWeek, widget.minutesPerSession, widget.days),
       };
     default:
       return null;

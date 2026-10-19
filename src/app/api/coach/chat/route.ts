@@ -1,18 +1,23 @@
-import { Types } from "mongoose";
 import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
   type UIMessage,
 } from "ai";
+import { Types } from "mongoose";
+import type { ChatBlock } from "@/features/chat/types";
 import { coachAgent } from "@/features/coach/agent/coach-agent";
-import { toChatWidgetFromInput } from "@/features/coach/agent/to-chat-widget";
+import { createCoachProgressWriter } from "@/features/coach/agent/coach-progress-stream";
+import { coachStepLabelForTool } from "@/features/coach/agent/coach-step-labels";
+import {
+  buildPlan,
+  toChatWidgetFromInput,
+} from "@/features/coach/agent/to-chat-widget";
 import { getSessionFromCookies } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db";
 import { apiError } from "@/lib/utils/http";
 import { ConversationModel } from "@/models/conversation";
 import { MessageModel } from "@/models/message";
-import type { ChatBlock } from "@/features/chat/types";
 
 type IncomingBody = {
   messages?: unknown;
@@ -112,13 +117,22 @@ export async function POST(request: Request) {
       days?: Array<{
         label?: string;
         focus?: string;
-        exercises?: Array<{ id?: string; name?: string; sets?: number; reps?: string; equipment?: string }>;
+        exercises?: Array<{
+          id?: string;
+          name?: string;
+          sets?: number;
+          reps?: string;
+          equipment?: string;
+        }>;
       }>;
     };
     const dayLines = (plan.days ?? [])
       .map((day) => {
         const exLines = (day.exercises ?? [])
-          .map((ex) => `  - ${ex.name} (id: ${ex.id}) · ${ex.sets} × ${ex.reps} · ${ex.equipment}`)
+          .map(
+            (ex) =>
+              `  - ${ex.name} (id: ${ex.id}) · ${ex.sets} × ${ex.reps} · ${ex.equipment}`,
+          )
           .join("\n");
         return `${day.label} – ${day.focus}:\n${exLines || "  (rest)"}`;
       })
@@ -145,9 +159,17 @@ export async function POST(request: Request) {
     execute: async ({ writer }) => {
       let accText = "";
       let accBlock: ChatBlock | null = null;
+      const coachProgress = createCoachProgressWriter(writer);
+      coachProgress.start("Reading your message");
 
       for await (const part of streamResult.fullStream) {
+        if (part.type === "start-step") {
+          coachProgress.advance("Thinking through your question");
+          continue;
+        }
+
         if (part.type === "text-start") {
+          coachProgress.completeAll();
           writer.write({ type: "text-start", id: part.id });
           continue;
         }
@@ -165,6 +187,47 @@ export async function POST(request: Request) {
         if (part.type === "text-end") {
           writer.write({ type: "text-end", id: part.id });
           continue;
+        }
+
+        if (part.type === "tool-call") {
+          coachProgress.advance(
+            coachStepLabelForTool(part.toolName, part.input),
+          );
+        }
+
+        if (part.type === "tool-call" && part.toolName === "update_plan") {
+          const input = part.input as {
+            name: string;
+            daysPerWeek: number;
+            minutesPerSession: number;
+            days: Array<{
+              label: string;
+              focus: string;
+              exercises: Array<{
+                exerciseId: string;
+                name: string;
+                sets: number;
+                reps: string;
+                equipment: string;
+              }>;
+            }>;
+          };
+          const plan = buildPlan(
+            input.name,
+            input.daysPerWeek,
+            input.minutesPerSession,
+            input.days,
+          );
+          await ConversationModel.findByIdAndUpdate(conversationId, {
+            hasPlan: true,
+            activePlan: plan,
+          });
+          // Emit plan_updated to sync the client panel in real-time (not persisted as message block)
+          writer.write({
+            type: "data-widget",
+            id: part.toolCallId,
+            data: { type: "plan_updated", id: part.toolCallId, plan },
+          });
         }
 
         if (part.type === "tool-call" && part.toolName === "show_widget") {
