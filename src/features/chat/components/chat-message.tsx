@@ -13,7 +13,12 @@ import {
 import { DescribedChoices } from "./blocks/described-choices";
 import { EquipmentBlock } from "./blocks/equipment-block";
 import { MuscleFocusBlock } from "./blocks/muscle-focus-block";
-import { PlanCreatedCard, SessionMutationBlock } from "./blocks/plan-blocks";
+import {
+  ExerciseOptionsBlock,
+  ExerciseSwapBlock,
+  PlanCreatedCard,
+  SessionMutationBlock,
+} from "./blocks/plan-blocks";
 import {
   GentleRoutineBlock,
   SafetyNoticeBlock,
@@ -199,6 +204,21 @@ function BlockRenderer({
           onAcknowledge={() => conversation.acknowledgeSafety()}
         />
       );
+    case "exercise_options":
+      return (
+        <ExerciseOptionsBlock
+          block={block}
+          resolved={resolved}
+          onSelect={(_exerciseId, name) => {
+            conversation.sendText(`Let's use ${name}`);
+          }}
+          onPersistSubmit={(exerciseId) =>
+            conversation.persistBlockSelection(block.id, exerciseId)
+          }
+        />
+      );
+    case "exercise_swap":
+      return <ExerciseSwapBlock block={block} />;
     case "gentle_routine":
       return <GentleRoutineBlock block={block} />;
     case "urgent_care":

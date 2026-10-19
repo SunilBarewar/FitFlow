@@ -112,6 +112,48 @@ export type ChatBlock =
   | {
       type: "urgent_care";
       id: string;
+    }
+  | {
+      type: "exercise_options";
+      id: string;
+      sessionLabel: string;
+      replacing: {
+        exerciseId: string;
+        name: string;
+        sets: number;
+        reps: string;
+        equipment: string;
+      };
+      options: {
+        exerciseId: string;
+        name: string;
+        equipment: string;
+        primaryMuscles: string[];
+        sets: number;
+        reps: string;
+      }[];
+      selected?: string;
+    }
+  | {
+      type: "exercise_swap";
+      id: string;
+      sessionLabel: string;
+      scope?: "today" | "all";
+      from: {
+        exerciseId: string;
+        name: string;
+        sets: number;
+        reps: string;
+        equipment: string;
+      };
+      to: {
+        exerciseId: string;
+        name: string;
+        sets: number;
+        reps: string;
+        equipment: string;
+      };
+      reason?: string;
     };
 
 export type ChatMessage = {

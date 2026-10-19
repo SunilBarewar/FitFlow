@@ -4,11 +4,14 @@ import { cn } from "cn";
 import {
   ArrowRight,
   CalendarDays,
+  Check,
   Clock,
   Dumbbell,
+  RefreshCw,
   Sparkles,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
 import type { ChatBlock } from "@/features/chat/types";
 
 type PlanCreatedBlock = Extract<ChatBlock, { type: "plan_created" }>;
@@ -135,5 +138,156 @@ function Row({ label, from, to }: { label: string; from: string; to: string }) {
         <span>{to}</span>
       </dd>
     </div>
+  );
+}
+
+type ExerciseOptionsBlock = Extract<ChatBlock, { type: "exercise_options" }>;
+type ExerciseSwapBlock = Extract<ChatBlock, { type: "exercise_swap" }>;
+
+export function ExerciseOptionsBlock({
+  block,
+  resolved,
+  onSelect,
+  onPersistSubmit,
+}: {
+  block: ExerciseOptionsBlock;
+  resolved: boolean;
+  onSelect: (exerciseId: string, name: string) => void;
+  onPersistSubmit: (exerciseId: string) => void;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(
+    block.selected ?? null,
+  );
+
+  function handleSelect(exerciseId: string, name: string) {
+    setSelectedId(exerciseId);
+    onPersistSubmit(exerciseId);
+    onSelect(exerciseId, name);
+  }
+
+  const chosen = block.options.find((o) => o.exerciseId === selectedId);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card"
+    >
+      <div className="px-4 pb-1 pt-3.5">
+        <p className="text-xs font-medium text-muted-foreground">
+          {block.sessionLabel}
+        </p>
+        <p className="mt-0.5 text-sm font-semibold">
+          Replace{" "}
+          <span className="text-muted-foreground line-through">
+            {block.replacing.name}
+          </span>
+        </p>
+      </div>
+      <div className="mt-2 divide-y divide-border border-t border-border">
+        {(resolved && chosen ? [chosen] : block.options).map((option) => {
+          const isSelected = option.exerciseId === selectedId;
+          return (
+            <div
+              key={option.exerciseId}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3",
+                isSelected && "bg-muted/50",
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium leading-tight">
+                  {option.name}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {option.equipment}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {option.primaryMuscles.slice(0, 2).join(", ")}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {option.sets} × {option.reps}
+                </p>
+              </div>
+              {resolved || selectedId ? (
+                isSelected ? (
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check size={14} aria-hidden />
+                  </span>
+                ) : null
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSelect(option.exerciseId, option.name)}
+                  className="h-8 shrink-0 rounded-pill bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  Use this
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+export function ExerciseSwapBlock({ block }: { block: ExerciseSwapBlock }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card"
+    >
+      <div className="flex items-center justify-between px-4 pb-2 pt-3.5">
+        <p className="text-xs font-medium text-muted-foreground">
+          {block.sessionLabel}
+        </p>
+        {block.scope ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            <RefreshCw size={10} aria-hidden />
+            {block.scope === "all" ? "All sessions" : "Today only"}
+          </span>
+        ) : null}
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-t border-border px-4 py-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-muted-foreground line-through">
+            {block.from.name}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {block.from.sets} × {block.from.reps}
+          </p>
+          <span className="mt-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {block.from.equipment}
+          </span>
+        </div>
+        <ArrowRight
+          size={14}
+          className="shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold text-foreground">
+            {block.to.name}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {block.to.sets} × {block.to.reps}
+          </p>
+          <span className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            {block.to.equipment}
+          </span>
+        </div>
+      </div>
+      {block.reason ? (
+        <div className="border-t border-border px-4 py-2.5">
+          <p className="text-xs text-muted-foreground">{block.reason}</p>
+        </div>
+      ) : null}
+    </motion.div>
   );
 }

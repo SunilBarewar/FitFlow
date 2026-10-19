@@ -96,6 +96,76 @@ export const WidgetSchema = z.discriminatedUnion("type", [
       )
       .min(1),
   }),
+  z
+    .object({
+      type: z.literal("exercise_options"),
+      sessionLabel: z
+        .string()
+        .describe(
+          "Day and focus context, e.g. 'Monday – Push Strength'.",
+        ),
+      replacing: z
+        .object({
+          exerciseId: z.string(),
+          name: z.string(),
+          sets: z.number(),
+          reps: z.string(),
+          equipment: z.string(),
+        })
+        .describe("The exercise being replaced."),
+      options: z
+        .array(
+          z.object({
+            exerciseId: z.string(),
+            name: z.string(),
+            equipment: z.string(),
+            primaryMuscles: z.array(z.string()),
+            sets: z.number(),
+            reps: z.string(),
+          }),
+        )
+        .min(1)
+        .max(5),
+    })
+    .describe(
+      "Show a selectable list of replacement exercise options. Call after search_exercises. Never list options in text — always use this widget.",
+    ),
+  z
+    .object({
+      type: z.literal("exercise_swap"),
+      sessionLabel: z
+        .string()
+        .describe("Day and focus label, e.g. 'Monday – Push Strength'."),
+      from: z.object({
+        exerciseId: z.string(),
+        name: z.string(),
+        sets: z.number(),
+        reps: z.string(),
+        equipment: z.string(),
+      }),
+      to: z.object({
+        exerciseId: z.string(),
+        name: z.string(),
+        sets: z.number(),
+        reps: z.string(),
+        equipment: z.string(),
+      }),
+      reason: z
+        .string()
+        .optional()
+        .describe(
+          "One short line explaining why this swap fits — movement pattern match, equipment available, or preference.",
+        ),
+      scope: z
+        .enum(["today", "all"])
+        .optional()
+        .describe(
+          "'today' = this session only, 'all' = updated in the plan for all upcoming sessions.",
+        ),
+    })
+    .describe(
+      "Show a before/after comparison card when swapping a single exercise in one session. Call after scope is confirmed.",
+    ),
 ]);
 
 export type WidgetInput = z.infer<typeof WidgetSchema>;

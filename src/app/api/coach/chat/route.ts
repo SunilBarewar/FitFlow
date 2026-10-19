@@ -99,9 +99,42 @@ export async function POST(request: Request) {
     return apiError(message, 400, "VALIDATION_ERROR");
   }
 
+  // Per-request context (today's day + active plan) via instructions — not system messages in `messages`.
+  const todayLabel = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+  });
+  const contextLines: string[] = [`Today is ${todayLabel}.`];
+  if (conversation.activePlan) {
+    const plan = conversation.activePlan as {
+      name?: string;
+      daysPerWeek?: number;
+      minutesPerSession?: number;
+      days?: Array<{
+        label?: string;
+        focus?: string;
+        exercises?: Array<{ id?: string; name?: string; sets?: number; reps?: string; equipment?: string }>;
+      }>;
+    };
+    const dayLines = (plan.days ?? [])
+      .map((day) => {
+        const exLines = (day.exercises ?? [])
+          .map((ex) => `  - ${ex.name} (id: ${ex.id}) · ${ex.sets} × ${ex.reps} · ${ex.equipment}`)
+          .join("\n");
+        return `${day.label} – ${day.focus}:\n${exLines || "  (rest)"}`;
+      })
+      .join("\n\n");
+    contextLines.push(
+      `Active plan: "${plan.name}" (${plan.daysPerWeek} days/week, ${plan.minutesPerSession} min/session)\n\n${dayLines}`,
+    );
+  } else {
+    contextLines.push("The user has no active plan yet.");
+  }
   let streamResult: Awaited<ReturnType<typeof coachAgent.stream>>;
   try {
-    streamResult = await coachAgent.stream({ messages: modelMessages });
+    streamResult = await coachAgent.stream({
+      messages: modelMessages,
+      options: { sessionContext: contextLines.join("\n\n") },
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "The coach couldn't respond.";

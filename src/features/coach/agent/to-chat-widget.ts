@@ -47,6 +47,24 @@ export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
       return { type: "gentle_routine", id, exercises: widget.exercises };
     case "urgent_care":
       return { type: "urgent_care", id };
+    case "exercise_options":
+      return {
+        type: "exercise_options",
+        id,
+        sessionLabel: widget.sessionLabel,
+        replacing: widget.replacing,
+        options: widget.options,
+      };
+    case "exercise_swap":
+      return {
+        type: "exercise_swap",
+        id,
+        sessionLabel: widget.sessionLabel,
+        from: widget.from,
+        to: widget.to,
+        reason: widget.reason,
+        scope: widget.scope,
+      };
     case "plan_preview":
       return {
         type: "plan_created",
