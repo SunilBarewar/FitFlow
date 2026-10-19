@@ -3,11 +3,12 @@
 import { cn } from "cn";
 import {
   CalendarRange,
+  Check,
   ChevronDown,
   ChevronLeft,
   Dumbbell,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
 import type { DayLog, Exercise, Plan, PlanDay } from "@/features/chat/types";
@@ -130,6 +131,12 @@ export function PlanTab({
         </p>
       </div>
 
+      <WeekStrip
+        plan={plan}
+        todayLog={todayLog}
+        onSelectDay={setSelectedDayId}
+      />
+
       <ul className="overflow-hidden rounded-xl border border-border">
         {orderedDays.map((day) => {
           const isToday = day.label === todayName;
@@ -190,6 +197,199 @@ export function PlanTab({
         })}
       </ul>
     </div>
+  );
+}
+
+type WeekDayState = "done" | "today" | "upcoming" | "rest";
+
+const WEEKDAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+] as const;
+
+function startOfDay(date: Date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy.getTime();
+}
+
+/**
+ * Monday–Sunday of the current week, matched against the plan.
+ * Completed days show as done: training days earlier this week count as
+ * completed, and today flips to done once every exercise in the real log
+ * is marked done. Rest days (or days with nothing planned) show a dash,
+ * like the phone mockup.
+ */
+function buildWeek(plan: Plan, todayLog: DayLog | null) {
+  const now = new Date();
+  // getDay() is Sunday-first (0 = Sun); shift so the week starts on Monday.
+  const mondayOffset = now.getDay() === 0 ? -6 : 1 - now.getDay();
+  const todayStart = startOfDay(now);
+
+  return WEEKDAYS.map((label, index) => {
+    const date = new Date(now);
+    date.setDate(now.getDate() + mondayOffset + index);
+    const planDay = plan.days.find((day) => day.label === label);
+    const isToday = date.toDateString() === now.toDateString();
+    const isRest = !planDay || planDay.exercises.length === 0;
+
+    let state: WeekDayState;
+    if (isRest) {
+      state = "rest";
+    } else if (isToday) {
+      const entries = todayLog?.dayLabel === label ? todayLog.entries : [];
+      const allDone = planDay.exercises.every((exercise) =>
+        entries.some(
+          (entry) =>
+            entry.exerciseId === exercise.id && entry.status === "done",
+        ),
+      );
+      state = allDone ? "done" : "today";
+    } else if (startOfDay(date) < todayStart) {
+      state = "done";
+    } else {
+      state = "upcoming";
+    }
+
+    return { label, date, isToday, planDay, state };
+  });
+}
+
+const WEEK_STATE_LABEL: Record<WeekDayState, string> = {
+  done: "done",
+  today: "today",
+  upcoming: "coming up",
+  rest: "rest day",
+};
+
+function WeekStrip({
+  plan,
+  todayLog,
+  onSelectDay,
+}: {
+  plan: Plan;
+  todayLog: DayLog | null;
+  onSelectDay: (dayId: string) => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const week = buildWeek(plan, todayLog);
+  const doneCount = week.filter((day) => day.state === "done").length;
+
+  return (
+    <section
+      aria-label="This week"
+      className="mb-4 rounded-xl border border-border bg-card px-4 py-3"
+    >
+      <div className="flex items-center justify-between gap-2 pb-3">
+        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          This week
+        </p>
+        {doneCount > 0 ? (
+          <span className="flex items-center gap-1 rounded-pill bg-brand-green-light px-2 py-1 text-[10px] font-bold text-primary">
+            <Check size={10} strokeWidth={3} aria-hidden />
+            {doneCount} done
+          </span>
+        ) : null}
+      </div>
+
+      <ol className="flex items-start justify-between">
+        {week.map((day, index) => {
+          const circle = (
+            <>
+              <span
+                className={cn(
+                  "text-[10px] leading-none",
+                  day.isToday
+                    ? "font-bold text-primary"
+                    : "font-medium text-muted-foreground",
+                )}
+              >
+                {day.label[0]}
+              </span>
+              <motion.span
+                initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 420,
+                  damping: 20,
+                  delay: reduceMotion ? 0 : index * 0.06,
+                }}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold",
+                  day.state === "done" && "bg-primary text-primary-foreground",
+                  day.state === "today" &&
+                    "border-2 border-primary text-primary",
+                  day.state === "upcoming" && "bg-muted text-muted-foreground",
+                  day.state === "rest" && "bg-muted text-muted-foreground",
+                  day.isToday &&
+                    day.state === "done" &&
+                    "ring-2 ring-primary ring-offset-2 ring-offset-card",
+                )}
+              >
+                {day.state === "done" ? (
+                  <Check size={14} strokeWidth={3} aria-hidden />
+                ) : day.state === "rest" ? (
+                  "–"
+                ) : (
+                  day.date.getDate()
+                )}
+              </motion.span>
+              {/* Date sits under the circle when the circle itself carries
+                  a check or dash instead of the number. */}
+              {day.state === "done" || day.state === "rest" ? (
+                <span
+                  className={cn(
+                    "text-[10px] leading-none",
+                    day.isToday
+                      ? "font-bold text-primary"
+                      : "font-medium text-muted-foreground",
+                  )}
+                >
+                  {day.date.getDate()}
+                </span>
+              ) : day.isToday ? (
+                <span className="h-1 w-1 rounded-full bg-primary" aria-hidden />
+              ) : (
+                <span
+                  className="invisible text-[10px] leading-none"
+                  aria-hidden
+                >
+                  {day.date.getDate()}
+                </span>
+              )}
+            </>
+          );
+
+          const label = `${day.label} ${day.date.getDate()} — ${WEEK_STATE_LABEL[day.state]}`;
+
+          return (
+            <li key={day.label} aria-label={day.planDay ? undefined : label}>
+              {day.planDay ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectDay(day.planDay?.id ?? "")}
+                  aria-label={`${label}. View this day's workout`}
+                  aria-current={day.isToday ? "date" : undefined}
+                  className="flex min-h-[44px] flex-col items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  {circle}
+                </button>
+              ) : (
+                <div className="flex min-h-[44px] flex-col items-center gap-1.5 px-1 py-1">
+                  {circle}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 

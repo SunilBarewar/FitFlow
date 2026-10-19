@@ -3,7 +3,10 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ConversationData, StoredMessage } from "./lib/get-conversation-data";
+import type {
+  ConversationData,
+  StoredMessage,
+} from "./lib/get-conversation-data";
 import type {
   ChatBlock,
   ChatMessage,
@@ -79,7 +82,10 @@ function storedMessagesToUi(messages: StoredMessage[]): UIMessage[] {
   });
 }
 
-export function useChatConversation(userName: string, initialData?: ConversationData) {
+export function useChatConversation(
+  userName: string,
+  initialData?: ConversationData,
+) {
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/coach/chat" }),
     [],
@@ -102,7 +108,9 @@ export function useChatConversation(userName: string, initialData?: Conversation
 
   const [hasPlan, setHasPlan] = useState(Boolean(initialData?.hasPlan));
   const [startNewChatPending, setStartNewChatPending] = useState(false);
-  const [todayLog, setDayLog] = useState<DayLog | null>(initialData?.todayLog ?? null);
+  const [todayLog, setDayLog] = useState<DayLog | null>(
+    initialData?.todayLog ?? null,
+  );
   const [panel, setPanel] = useState<PanelState>({
     tab: "today",
     plan: initialPlan,

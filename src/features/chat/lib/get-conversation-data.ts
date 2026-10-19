@@ -39,14 +39,17 @@ export async function getConversationData(
     throw new Error("Failed to load conversation");
   }
 
-  const rawMessages = await MessageModel.find({ conversationId: conversation._id })
+  const rawMessages = await MessageModel.find({
+    conversationId: conversation._id,
+  })
     .sort({ createdAt: 1 })
     .limit(HISTORY_LIMIT)
     .lean();
 
   const dailyLogs = (conversation.dailyLogs ?? []) as DayLog[];
   const todayLog =
-    dailyLogs.find((log) => log.date === date && log.dayLabel === dayLabel) ?? null;
+    dailyLogs.find((log) => log.date === date && log.dayLabel === dayLabel) ??
+    null;
 
   return {
     hasPlan: Boolean(conversation.hasPlan && conversation.activePlan),

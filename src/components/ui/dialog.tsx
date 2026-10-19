@@ -82,4 +82,10 @@ function DialogCenterContent({
   );
 }
 
-export { Dialog, DialogTrigger, DialogClose, DialogSheetContent, DialogCenterContent };
+export {
+  Dialog,
+  DialogTrigger,
+  DialogClose,
+  DialogSheetContent,
+  DialogCenterContent,
+};

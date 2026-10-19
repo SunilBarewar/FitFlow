@@ -3,10 +3,21 @@
 import { cn } from "cn";
 import { LogOut, RotateCcw, User } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { FitFlowLogo } from "@/components/brand/fitflow-logo";
-import { Dialog, DialogCenterContent, DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogCenterContent,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 const menuItemClass =
   "flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
@@ -188,9 +199,7 @@ export function ContextBar({
             >
               Yes, start new plan
             </button>
-            <DialogClose
-              className="flex h-11 w-full items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-            >
+            <DialogClose className="flex h-11 w-full items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted">
               Cancel
             </DialogClose>
           </div>

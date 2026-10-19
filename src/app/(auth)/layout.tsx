@@ -1,6 +1,10 @@
 import { AuthPanel } from "@/components/auth/auth-panel";
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-h-screen flex">
       <div className="lg:w-[55%] xl:w-[52%] flex-shrink-0">

@@ -55,7 +55,10 @@ function SignInForm() {
         <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
         <p className="text-muted-foreground text-sm">
           Don&apos;t have an account?{" "}
-          <Link href="/sign-up" className="text-primary font-medium hover:underline underline-offset-4">
+          <Link
+            href="/sign-up"
+            className="text-primary font-medium hover:underline underline-offset-4"
+          >
             Create one free
           </Link>
         </p>
@@ -70,7 +73,9 @@ function SignInForm() {
       >
         {/* Email */}
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm font-medium">Email address</label>
+          <label htmlFor="email" className="text-sm font-medium">
+            Email address
+          </label>
           <input
             id="email"
             type="email"
@@ -81,7 +86,7 @@ function SignInForm() {
             className={cn(
               "w-full h-12 rounded-xl border bg-background px-4 text-base outline-none transition-all duration-150",
               "placeholder:text-muted-foreground/60",
-              "focus:ring-2 focus:ring-ring focus:border-ring border-border"
+              "focus:ring-2 focus:ring-ring focus:border-ring border-border",
             )}
           />
         </div>
@@ -89,8 +94,13 @@ function SignInForm() {
         {/* Password */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium">Password</label>
-            <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+            <label htmlFor="password" className="text-sm font-medium">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
               Forgot password?
             </Link>
           </div>
@@ -105,7 +115,7 @@ function SignInForm() {
               className={cn(
                 "w-full h-12 rounded-xl border bg-background px-4 pr-12 text-base outline-none transition-all duration-150",
                 "placeholder:text-muted-foreground/60",
-                "focus:ring-2 focus:ring-ring focus:border-ring border-border"
+                "focus:ring-2 focus:ring-ring focus:border-ring border-border",
               )}
             />
             <button
@@ -145,20 +155,27 @@ function SignInForm() {
               Signing in…
             </span>
           ) : (
-            <>Sign in <ArrowRight size={16} /></>
+            <>
+              Sign in <ArrowRight size={16} />
+            </>
           )}
         </Button>
 
         {/* Divider */}
         <div className="relative flex items-center gap-3">
           <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground font-medium px-1">or continue with</span>
+          <span className="text-xs text-muted-foreground font-medium px-1">
+            or continue with
+          </span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
         {/* OAuth */}
         <div className="grid grid-cols-2 gap-3">
-          {[{ label: "Google", icon: "G" }, { label: "Apple", icon: "" }].map(({ label, icon }) => (
+          {[
+            { label: "Google", icon: "G" },
+            { label: "Apple", icon: "" },
+          ].map(({ label, icon }) => (
             <button
               key={label}
               type="button"
@@ -178,9 +195,20 @@ function SignInForm() {
         className="text-xs text-muted-foreground text-center"
       >
         By signing in, you agree to our{" "}
-        <Link href="/terms" className="underline underline-offset-4 hover:text-foreground">Terms</Link>
-        {" "}and{" "}
-        <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">Privacy Policy</Link>.
+        <Link
+          href="/terms"
+          className="underline underline-offset-4 hover:text-foreground"
+        >
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link
+          href="/privacy"
+          className="underline underline-offset-4 hover:text-foreground"
+        >
+          Privacy Policy
+        </Link>
+        .
       </motion.p>
     </div>
   );

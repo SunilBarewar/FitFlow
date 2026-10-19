@@ -9,11 +9,7 @@ export function apiSuccess<T>(data: T, init?: ResponseInit) {
   return NextResponse.json({ ok: true, data }, init);
 }
 
-export function apiError(
-  message: string,
-  status = 400,
-  code = "BAD_REQUEST",
-) {
+export function apiError(message: string, status = 400, code = "BAD_REQUEST") {
   return NextResponse.json(
     { ok: false, error: { code, message } satisfies ApiErrorBody },
     { status },

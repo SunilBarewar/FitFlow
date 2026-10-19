@@ -9,8 +9,7 @@ function ToastIcon({
 }: {
   variant: "success" | "error" | "info" | "loading";
 }) {
-  const base =
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl";
+  const base = "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl";
 
   if (variant === "success") {
     return (

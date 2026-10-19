@@ -96,7 +96,7 @@ export function MuscleFocusBlock({
         : [...current, id],
     );
   }
-  
+
   return (
     <SetupCard>
       <SetupCardHeader

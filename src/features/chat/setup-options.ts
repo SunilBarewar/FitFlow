@@ -43,8 +43,7 @@ export const EXPERIENCE_OPTIONS: SetupOption[] = [
   {
     id: "regular",
     label: "I work out consistently (more than 6 months)",
-    description:
-      "We can use more variety and more challenging movements.",
+    description: "We can use more variety and more challenging movements.",
   },
 ];
 

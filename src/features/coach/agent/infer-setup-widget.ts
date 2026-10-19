@@ -39,7 +39,8 @@ function userNamedMuscleFocus(messages: UIMessage[]): boolean {
   const focusPattern =
     /\b(full body|upper body|lower body|push|pull|legs|chest|back|shoulders|arms|core|glutes)\b/i;
   return messages.some(
-    (message) => message.role === "user" && focusPattern.test(textFromMessage(message)),
+    (message) =>
+      message.role === "user" && focusPattern.test(textFromMessage(message)),
   );
 }
 
@@ -54,10 +55,7 @@ function stepCompleted(
     if (!block || !matches(block)) continue;
 
     for (let after = index + 1; after < messages.length; after++) {
-      if (
-        messages[after].role === "user" &&
-        textFromMessage(messages[after])
-      ) {
+      if (messages[after].role === "user" && textFromMessage(messages[after])) {
         return true;
       }
     }

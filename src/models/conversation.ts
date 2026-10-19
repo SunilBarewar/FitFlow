@@ -1,4 +1,9 @@
-import { type HydratedDocument, type InferSchemaType, Schema, Types } from "mongoose";
+import {
+  type HydratedDocument,
+  type InferSchemaType,
+  Schema,
+  Types,
+} from "mongoose";
 import { registerModel } from "@/lib/db";
 
 // ---------------------------------------------------------------------------
