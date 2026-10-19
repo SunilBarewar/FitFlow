@@ -3,12 +3,14 @@ import { type FlattenMaps, Types } from "mongoose";
 import type { ExerciseLogStatus, Plan, PlanDay } from "@/features/chat/types";
 import { toDayLabel, weekDateKeys } from "@/lib/date/today";
 import { connectDB } from "@/lib/db";
+import { getExerciseById } from "@/lib/exercises/exercise-catalog";
 import { ConversationModel } from "@/models/conversation";
 import {
   type WorkoutSessionDoc,
   WorkoutSessionModel,
 } from "@/models/workout-session";
 import type {
+  SessionAdjustmentPatch,
   SessionExercise,
   SessionStatus,
   WeekDaySummary,
@@ -235,7 +237,7 @@ export async function ensureSession(
     const rebuilt = await WorkoutSessionModel.findOneAndUpdate(
       { userId: userObjId, date },
       { $set: newSessionFields(plan, date, dayLabel) },
-      { new: true },
+      { returnDocument: "after" },
     ).lean<LeanSession | null>();
     return rebuilt ? toDTO(rebuilt) : toDTO(existing);
   }
@@ -426,7 +428,7 @@ export async function setExerciseStatus(
         ...timestampsFor(nextStatus, session),
       },
     },
-    { new: true },
+    { returnDocument: "after" },
   ).lean<LeanSession | null>();
 
   return updated ? toDTO(updated) : null;
@@ -488,7 +490,126 @@ export async function setSessionStatus(
         ),
       },
     },
-    { new: true },
+    { returnDocument: "after" },
+  ).lean<LeanSession | null>();
+
+  return updated ? toDTO(updated) : null;
+}
+
+/** Build a session row from the catalog, for an exercise the plan didn't have. */
+function fromCatalog(
+  exerciseId: string,
+  order: number,
+  origin: SessionExercise["origin"],
+  overrides: { sets?: number; reps?: string; replaces?: string } = {},
+): SessionExerciseWrite | null {
+  const catalog = getExerciseById(exerciseId);
+  if (!catalog) return null;
+  return {
+    exerciseId: catalog.id,
+    name: catalog.name,
+    sets: overrides.sets ?? 3,
+    reps: overrides.reps ?? "10",
+    equipment: catalog.equipment ?? "body only",
+    instructions: catalog.instructions ?? [],
+    muscles: catalog.primaryMuscles ?? [],
+    images: catalog.images ?? [],
+    order,
+    origin,
+    replacesExerciseId: overrides.replaces ?? null,
+    status: "pending",
+    note: null,
+    completedAt: null,
+  };
+}
+
+/**
+ * A day-scoped edit: shorter session, a dropped movement, a stand-in, an
+ * extra finisher. The weekly plan is never touched — that is the whole point
+ * of sessions existing.
+ *
+ * An exercise that is already marked done is never removed. It happened; the
+ * session is a record, and records don't get rewritten by a later decision.
+ */
+export async function applySessionAdjustment(
+  userId: string,
+  date: string,
+  patch: SessionAdjustmentPatch,
+): Promise<WorkoutSession | null> {
+  await connectDB();
+  const userObjId = new Types.ObjectId(userId);
+
+  const session = await WorkoutSessionModel.findOne({
+    userId: userObjId,
+    date,
+  }).lean<LeanSession | null>();
+  if (!session) return null;
+
+  let exercises: SessionExerciseWrite[] = (session.exercises ?? []).map(
+    toWrite,
+  );
+
+  for (const swap of patch.replace ?? []) {
+    const index = exercises.findIndex(
+      (item) => item.exerciseId === swap.exerciseId,
+    );
+    if (index < 0) continue;
+    const stand = fromCatalog(
+      swap.withExerciseId,
+      exercises[index].order,
+      "swapped",
+      {
+        sets: swap.sets ?? exercises[index].sets,
+        reps: swap.reps ?? exercises[index].reps,
+        replaces: swap.exerciseId,
+      },
+    );
+    if (stand) exercises[index] = stand;
+  }
+
+  if (patch.remove?.length) {
+    const dropping = new Set(patch.remove);
+    exercises = exercises.filter(
+      (item) => !dropping.has(item.exerciseId) || item.status === "done",
+    );
+  }
+
+  for (const addition of patch.add ?? []) {
+    if (exercises.some((item) => item.exerciseId === addition.exerciseId))
+      continue;
+    const extra = fromCatalog(addition.exerciseId, exercises.length, "added", {
+      sets: addition.sets,
+      reps: addition.reps,
+    });
+    if (extra) exercises.push(extra);
+  }
+
+  // Order stays dense so the list reads 1..n after any edit.
+  exercises = exercises.map((item, index) => ({ ...item, order: index }));
+
+  const nextStatus = deriveSessionStatus(
+    exercises,
+    session.status as SessionStatus,
+  );
+
+  const updated = await WorkoutSessionModel.findOneAndUpdate(
+    { userId: userObjId, date },
+    {
+      $set: {
+        exercises,
+        status: nextStatus,
+        targetMinutes: patch.targetMinutes ?? session.targetMinutes ?? null,
+        adjustment: {
+          reason: patch.reason,
+          source: patch.source ?? "user",
+          fromMinutes: session.targetMinutes ?? null,
+          toMinutes: patch.targetMinutes ?? session.targetMinutes ?? null,
+          adjustedAt: new Date(),
+        },
+        ...timestampsFor(nextStatus, session),
+      },
+    },
+    { returnDocument: "after" },
   ).lean<LeanSession | null>();
 
   return updated ? toDTO(updated) : null;
@@ -509,7 +630,7 @@ export async function resetSessionToPlan(
   const reset = await WorkoutSessionModel.findOneAndUpdate(
     { userId: userObjId, date },
     { $set: newSessionFields(plan, date, dayLabel) },
-    { new: true, upsert: true, setDefaultsOnInsert: true },
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
   ).lean<LeanSession | null>();
 
   return reset ? toDTO(reset) : null;

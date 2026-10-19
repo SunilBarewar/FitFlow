@@ -53,3 +53,22 @@ export type WeekDaySummary = {
   totalCount: number;
   isToday: boolean;
 };
+
+/** A day-scoped edit. Everything here changes today's session only — the
+ * weekly plan is never touched. */
+export type SessionAdjustmentPatch = {
+  reason: string;
+  source?: "coach" | "user";
+  targetMinutes?: number;
+  /** Exercise ids to drop from today. */
+  remove?: string[];
+  /** Catalog exercises to append to today. */
+  add?: { exerciseId: string; sets?: number; reps?: string }[];
+  /** Stand-ins for today: the original stays in the plan, not in this session. */
+  replace?: {
+    exerciseId: string;
+    withExerciseId: string;
+    sets?: number;
+    reps?: string;
+  }[];
+};
