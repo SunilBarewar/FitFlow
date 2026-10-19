@@ -65,7 +65,7 @@ export function SiteFooter() {
             overlapping contours show through a text stroke. */}
         <p
           aria-hidden
-          className="mt-14 select-none bg-gradient-to-b from-accent-soft/70 via-accent-soft/25 to-transparent bg-clip-text text-[17vw] leading-[0.8] font-semibold tracking-[-0.055em] text-transparent"
+          className="mt-14 select-none bg-linear-to-b from-accent-soft/70 via-accent-soft/25 to-transparent bg-clip-text text-[17vw] leading-[0.8] font-semibold tracking-[-0.055em] text-transparent"
         >
           FitFlow
         </p>

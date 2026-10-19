@@ -24,7 +24,7 @@ export function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
           sizes="100vw"
           className="size-full object-cover object-bottom"
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-b from-transparent to-canvas" />
+        <div className="absolute inset-x-0 bottom-0 h-1/4 bg-linear-to-b from-transparent to-canvas" />
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 pt-20 pb-16 sm:px-6 sm:pt-24 sm:pb-20 lg:px-8">

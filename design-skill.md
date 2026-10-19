@@ -71,6 +71,7 @@ Reuse a recipe only for a project that should openly look related. Otherwise mak
 - Hero: photographic sunrise over coastal grassland — pale cream and apricot sky, wind-combed grasses and dunes in the bottom band, small pines at both edges. Fit `min-h-[480px] md:min-h-[calc(503px_+_14.7vw)]` on the hero section itself, with the image as `absolute inset-0` (not `-z-10`, which drops it behind the page background).
 - Closing card: hand-painted warm morning sky, sculpted clouds on the right, meadow grasses bottom-left and an olive canopy bottom-right.
 - Signature: the week rail — seven day dots (trained, live, open) inside every section badge and in the footer.
+- Auth panel: a third image — a footpath climbing through misty meadow grass at first light, portrait 2:3, bottom third left pale for dark text. Shown as an inset rounded card beside the form on desktop and as a 160px banner above it on phones.
 - The app's green-and-coral tile mark is deliberately not used on this surface; a typographic lockup with one honey dot stands in.
 
 ## Tokens

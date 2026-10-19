@@ -16,7 +16,7 @@ export function ClosingCard({ isLoggedIn }: { isLoggedIn: boolean }) {
         />
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/20 to-transparent"
+          className="absolute inset-0 bg-linear-to-r from-white/60 via-white/20 to-transparent"
         />
 
         <div className="relative max-w-xl px-7 py-16 sm:px-12 sm:py-24">

@@ -293,7 +293,7 @@
 
   /* Gradient text — brand green → coral */
   .gradient-text {
-    @apply bg-gradient-to-r from-brand-green to-brand-coral bg-clip-text text-transparent;
+    @apply bg-linear-to-r from-brand-green to-brand-coral bg-clip-text text-transparent;
   }
 
   /* Card with consistent hover lift */
@@ -353,6 +353,9 @@
   --color-accent-soft: #fde8b0;
   --color-accent-deep: #f8d987;
   --color-accent-edge: #c98a1a;
+
+  /* Status, used sparingly (the app theme owns --color-destructive) */
+  --color-danger: #c0362c;
 
   /* Dark product stage — deep forest */
   --color-stage: #10221b;
@@ -442,3 +445,4 @@
     }
   }
 }
+
