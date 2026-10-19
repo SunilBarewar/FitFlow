@@ -1,17 +1,5 @@
 "use client";
 
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Dumbbell,
-  Moon,
-  NotebookPen,
-  Play,
-  SkipForward,
-  Sparkles,
-  Sunrise,
-} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -23,6 +11,16 @@ import type {
 } from "@/features/chat/types";
 import { exerciseImageUrl } from "@/lib/exercises/image-url";
 import { cn } from "@/lib/utils/cn";
+import {
+  Caret,
+  KitMark,
+  NoteMark,
+  PlayMark,
+  RestMark,
+  SkipMark,
+  SwapMark,
+  Tick,
+} from "../ui/glyphs";
 
 type ExerciseState = { status: ExerciseLogStatus; note?: string };
 
@@ -100,7 +98,7 @@ export function TodayCard({
     return (
       <div className="flex flex-col items-center gap-2 rounded-[22px] border border-dashed border-line-strong px-5 py-12 text-center">
         <span className="flex size-10 items-center justify-center rounded-full bg-accent-soft text-accent-edge">
-          <Sunrise size={18} aria-hidden />
+          <RestMark size={20} />
         </span>
         <p className="pt-1 text-[15px] font-semibold">Nothing planned yet</p>
         <p className="max-w-56 text-[13px] leading-relaxed text-ink-muted">
@@ -163,10 +161,9 @@ export function TodayCard({
                 className="overflow-hidden"
               >
                 <p className="flex items-start gap-2 rounded-2xl border border-sky-edge bg-sky-tint px-3 py-2.5 text-[12px] leading-snug text-ink-soft">
-                  <Sparkles
-                    size={13}
+                  <SwapMark
+                    size={14}
                     className="mt-0.5 shrink-0 text-sky-ink"
-                    aria-hidden
                   />
                   <span>
                     Adjusted for today: {today.adjusted.reason} —{" "}
@@ -276,7 +273,7 @@ function SessionHeader({
 
         {isRestDay ? (
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sky-tint text-sky-ink">
-            <Moon size={18} aria-hidden />
+            <RestMark size={20} />
           </span>
         ) : (
           <ProgressRing
@@ -297,9 +294,9 @@ function SessionHeader({
         >
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-white">
             {doneCount === 0 ? (
-              <Play size={13} className="ml-0.5 fill-current" aria-hidden />
+              <PlayMark size={14} className="ml-0.5" />
             ) : (
-              <Dumbbell size={14} aria-hidden />
+              <KitMark id="dumbbell" size={15} />
             )}
           </span>
           <span className="min-w-0 flex-1">
@@ -311,7 +308,7 @@ function SessionHeader({
               {currentExercise.reps}
             </span>
           </span>
-          <ChevronRight size={16} className="shrink-0 text-ink-subtle" />
+          <Caret size={16} className="-rotate-90 shrink-0 text-ink-subtle" />
         </motion.button>
       ) : null}
     </div>
@@ -381,7 +378,7 @@ function ProgressRing({
             transition={{ type: "spring", stiffness: 380, damping: 16 }}
             className="text-accent-edge"
           >
-            <Check size={16} strokeWidth={3} aria-hidden />
+            <Tick size={16} />
           </motion.span>
         ) : (
           <span className="font-brand-mono text-[11px] text-ink-soft">
@@ -403,7 +400,7 @@ function StatusBadge({ variant }: { variant: RowVariant }) {
         className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mint-tint text-mint-ink"
         aria-label="Done"
       >
-        <Check size={12} strokeWidth={3} aria-hidden />
+        <Tick size={12} />
       </motion.span>
     );
   }
@@ -520,7 +517,7 @@ function ExerciseRow({
                 whileTap={{ scale: 0.97 }}
                 className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-ink text-[12px] font-semibold text-white transition-colors hover:bg-ink-soft"
               >
-                <Check size={13} strokeWidth={3} aria-hidden />
+                <Tick size={13} />
                 Mark done
               </motion.button>
               <motion.button
@@ -529,7 +526,7 @@ function ExerciseRow({
                 whileTap={{ scale: 0.97 }}
                 className="flex h-10 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[12px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
               >
-                <SkipForward size={13} aria-hidden />
+                <SkipMark size={13} />
                 Skip
               </motion.button>
             </div>
@@ -566,7 +563,7 @@ function ExerciseDetailView({
         onClick={onBack}
         className="inline-flex min-h-10 items-center gap-1 self-start text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
       >
-        <ChevronLeft size={16} aria-hidden /> All exercises
+        <Caret size={16} className="rotate-90" /> All exercises
       </button>
 
       <div className="flex items-center gap-3">
@@ -637,9 +634,7 @@ function ExerciseDetailView({
                   : "bg-sunken text-ink-muted",
               )}
             >
-              {state.status === "done" ? (
-                <Check size={10} strokeWidth={3} aria-hidden />
-              ) : null}
+              {state.status === "done" ? <Tick size={10} /> : null}
               {index + 1} · {exercise.reps}
             </motion.span>
           ))}
@@ -671,7 +666,7 @@ function ExerciseDetailView({
               : "border-line bg-surface text-ink-soft hover:bg-sunken",
           )}
         >
-          <SkipForward size={14} aria-hidden />
+          <SkipMark size={14} />
           {state.status === "skipped" ? "Skipped" : "Skip"}
         </motion.button>
         <motion.button
@@ -685,7 +680,7 @@ function ExerciseDetailView({
               : "bg-ink text-white hover:bg-ink-soft",
           )}
         >
-          <Check size={14} strokeWidth={3} aria-hidden />
+          <Tick size={14} />
           {state.status === "done" ? "Done" : "Mark done"}
         </motion.button>
       </div>
@@ -716,7 +711,7 @@ function ExerciseDetailView({
           onClick={() => setNoteOpen(true)}
           className="inline-flex min-h-10 items-center gap-1.5 self-start text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
         >
-          <NotebookPen size={14} aria-hidden /> Add a note
+          <NoteMark size={14} /> Add a note
         </button>
       )}
     </div>
@@ -741,7 +736,7 @@ function ExerciseThumbnail({
         style={style}
         className="flex shrink-0 items-center justify-center rounded-xl bg-sunken"
       >
-        <Dumbbell size={16} className="text-ink-subtle" aria-hidden />
+        <KitMark id="dumbbell" size={20} className="text-line-strong" />
       </div>
     );
   }

@@ -1,6 +1,5 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import type { SetupOption } from "@/features/chat/setup-options";
@@ -13,14 +12,15 @@ const TONES = ["accent", "mint", "sky", "violet"] as const;
 /** A short list of answers, each with a line explaining it. One tap sends. */
 export function DescribedChoices({
   options,
-  icons,
+  glyphs,
   resolved,
   initialSelectedId,
   onSelect,
   onPersistSubmit,
 }: {
   options: Choice[];
-  icons?: Record<string, LucideIcon>;
+  /** Drawn marks keyed by option id — see ../ui/glyphs. */
+  glyphs?: Record<string, React.ReactNode>;
   resolved: boolean;
   initialSelectedId?: string;
   onSelect: (optionId: string, label: string) => void;
@@ -46,7 +46,7 @@ export function DescribedChoices({
             role="radio"
             title={option.label}
             description={option.description}
-            icon={icons?.[option.id]}
+            glyph={glyphs?.[option.id]}
             tone={TONES[index % TONES.length]}
             selected={clickedId === option.id}
             dimmed={known && resolved && clickedId !== option.id}

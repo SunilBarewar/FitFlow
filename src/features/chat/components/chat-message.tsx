@@ -1,8 +1,6 @@
 "use client";
 
-import { Dumbbell, Flame, Sprout } from "lucide-react";
 import { motion } from "motion/react";
-import { EXPERIENCE_OPTIONS } from "@/features/chat/setup-options";
 import type { ChatBlock, ChatMessage } from "@/features/chat/types";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
 import { cn } from "@/lib/utils/cn";
@@ -10,8 +8,8 @@ import {
   ChoiceChipsBlock,
   MultiSelectChipsBlock,
 } from "./blocks/choice-blocks";
-import { DescribedChoices } from "./blocks/described-choices";
 import { EquipmentBlock } from "./blocks/equipment-block";
+import { ExperienceBlock } from "./blocks/experience-block";
 import { MuscleFocusBlock } from "./blocks/muscle-focus-block";
 import {
   ExerciseOptionsBlock,
@@ -128,12 +126,11 @@ function BlockRenderer({
       );
     case "experience":
       return (
-        <DescribedChoices
-          options={EXPERIENCE_OPTIONS}
-          icons={{ new: Sprout, returning: Dumbbell, regular: Flame }}
+        <ExperienceBlock
+          blockId={block.id}
           resolved={resolved}
           initialSelectedId={block.selected}
-          onSelect={(optionId, label) =>
+          onSubmit={(optionId, label) =>
             conversation.selectChoice(optionId, label)
           }
           onPersistSubmit={(id) =>

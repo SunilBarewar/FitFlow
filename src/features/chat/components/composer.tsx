@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowUp, CornerDownLeft } from "lucide-react";
 import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
+import { EnterMark, SendMark } from "./ui/glyphs";
 
 const MAX_HEIGHT = 180;
 
@@ -84,7 +84,7 @@ export function Composer({
           : "bg-sunken text-ink-subtle",
       )}
     >
-      <ArrowUp size={18} aria-hidden />
+      <SendMark size={18} />
     </motion.button>
   );
 
@@ -109,8 +109,7 @@ export function Composer({
           {field}
           <div className="flex items-center justify-between gap-3 pt-2">
             <p className="hidden items-center gap-1.5 text-[12px] text-ink-subtle sm:flex">
-              <CornerDownLeft size={12} aria-hidden /> Enter to send ·
-              Shift+Enter for a new line
+              <EnterMark size={12} /> Enter to send · Shift+Enter for a new line
             </p>
             <span className="ml-auto">{sendButton}</span>
           </div>

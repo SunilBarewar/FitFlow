@@ -263,7 +263,7 @@ No number_stepper, body_area_selector, or free_text_prompt widgets exist. Use bu
 
 **Experience answers → internal level (never say the level to the user):**
 - "I'm new to working out" → beginner
-- "I'm getting back into it" → beginner
+- "I've worked out before" → beginner
 - "I work out consistently" → intermediate (use expert only if they later describe years of training or barbell comfort)
 
 **Session length answers → duration budget:**

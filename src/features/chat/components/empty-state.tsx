@@ -1,24 +1,24 @@
 "use client";
 
-import { CalendarRange, MessageCircle, Moon } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo } from "react";
 import { Composer } from "./composer";
+import { AskMark, LowEnergyMark, WeekMark } from "./ui/glyphs";
 
 const SUGGESTIONS = [
   {
-    icon: CalendarRange,
+    glyph: <WeekMark size={15} />,
     label: "Build a weekly routine",
     prompt: "Can you help me set up a weekly workout routine?",
   },
   {
-    icon: Moon,
+    glyph: <LowEnergyMark size={15} />,
     label: "I'm low on energy",
     prompt:
       "I'm really low on energy today but I still want to move. What would you suggest?",
   },
   {
-    icon: MessageCircle,
+    glyph: <AskMark size={15} />,
     label: "Ask a fitness question",
     prompt: "I've got a fitness question — can I ask you something?",
   },
@@ -84,7 +84,7 @@ export function EmptyState({
           }}
           className="flex flex-wrap gap-2 justify-center"
         >
-          {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
+          {SUGGESTIONS.map(({ glyph, label, prompt }) => (
             <motion.button
               key={label}
               type="button"
@@ -96,11 +96,7 @@ export function EmptyState({
               onClick={() => onSend(prompt)}
               className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-[13px] font-medium text-ink-soft shadow-card transition-colors hover:bg-sunken"
             >
-              <Icon
-                size={14}
-                aria-hidden
-                className="shrink-0 text-accent-edge"
-              />
+              <span className="shrink-0 text-accent-edge">{glyph}</span>
               {label}
             </motion.button>
           ))}

@@ -1,9 +1,9 @@
 "use client";
 
-import { HeartPulse, PhoneCall, ShieldAlert, Waves } from "lucide-react";
 import { motion } from "motion/react";
 import type { ChatBlock } from "@/features/chat/types";
 import { BlockCard } from "../ui/controls";
+import { CautionMark, EasyWaveMark, PulseMark } from "../ui/glyphs";
 
 type SafetyNoticeBlock = Extract<ChatBlock, { type: "safety_notice" }>;
 type GentleRoutineBlock = Extract<ChatBlock, { type: "gentle_routine" }>;
@@ -29,7 +29,7 @@ export function SafetyNoticeBlock({
     >
       <div className="flex items-start gap-3 p-4">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface text-peach-ink">
-          <ShieldAlert size={17} aria-hidden />
+          <CautionMark size={18} />
         </span>
         <p className="pt-1 text-[14px] leading-relaxed text-pretty text-ink-soft">
           {block.body}
@@ -55,7 +55,7 @@ export function GentleRoutineBlock({ block }: { block: GentleRoutineBlock }) {
   return (
     <BlockCard className="max-w-md">
       <div className="flex items-center gap-2.5 bg-sky-tint px-4 py-3">
-        <Waves size={15} className="shrink-0 text-sky-ink" aria-hidden />
+        <EasyWaveMark size={16} className="shrink-0 text-sky-ink" />
         <p className="text-[12px] font-semibold text-sky-ink">
           Comfort movement · not a treatment plan
         </p>
@@ -102,15 +102,14 @@ export function UrgentCareBlock() {
       className="flex w-full max-w-md items-start gap-3 rounded-[22px] border border-danger/25 bg-danger/5 p-4"
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface text-danger">
-        <HeartPulse size={17} aria-hidden />
+        <PulseMark size={18} />
       </span>
       <div className="min-w-0 pt-0.5">
         <p className="text-[14px] leading-snug font-semibold text-ink">
           Please seek medical care instead of exercising right now.
         </p>
-        <p className="flex items-center gap-1.5 pt-1.5 text-[12px] text-ink-muted">
-          <PhoneCall size={12} aria-hidden />A qualified clinician can safely
-          assess what&apos;s going on.
+        <p className="pt-1.5 text-[12px] text-ink-muted">
+          A qualified clinician can safely assess what&apos;s going on.
         </p>
       </div>
     </motion.div>

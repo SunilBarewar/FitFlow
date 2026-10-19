@@ -1,18 +1,12 @@
 "use client";
 
-import {
-  CalendarRange,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  Dumbbell,
-} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
 import type { DayLog, Exercise, Plan, PlanDay } from "@/features/chat/types";
 import { exerciseImageUrl } from "@/lib/exercises/image-url";
 import { cn } from "@/lib/utils/cn";
+import { Caret, KitMark, Tick, WeekMark } from "../ui/glyphs";
 
 const WEEKDAYS = [
   "Monday",
@@ -111,7 +105,7 @@ export function PlanTab({
     return (
       <div className="flex flex-col items-center gap-2 rounded-[22px] border border-dashed border-line-strong px-5 py-12 text-center">
         <span className="flex size-10 items-center justify-center rounded-full bg-sky-tint text-sky-ink">
-          <CalendarRange size={18} aria-hidden />
+          <WeekMark size={20} />
         </span>
         <p className="pt-1 text-[15px] font-semibold">No plan yet</p>
         <p className="max-w-56 text-[13px] leading-relaxed text-ink-muted">
@@ -139,7 +133,7 @@ export function PlanTab({
             onClick={() => setSelectedDayId(null)}
             className="inline-flex min-h-10 items-center gap-1 self-start text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
           >
-            <ChevronLeft size={16} aria-hidden /> All days
+            <Caret size={16} className="rotate-90" /> All days
           </button>
 
           <div className="flex items-start justify-between gap-3">
@@ -257,7 +251,7 @@ function WeekRow({
         </p>
         {doneCount > 0 ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-mint-tint px-2 py-1 text-[11px] font-semibold text-mint-ink">
-            <Check size={10} strokeWidth={3} aria-hidden />
+            <Tick size={11} />
             {doneCount} done
           </span>
         ) : null}
@@ -294,7 +288,7 @@ function WeekRow({
                 )}
               >
                 {day.state === "done" ? (
-                  <Check size={14} strokeWidth={3} aria-hidden />
+                  <Tick size={14} />
                 ) : day.state === "rest" ? (
                   "–"
                 ) : (
@@ -426,7 +420,7 @@ function PlanExerciseRow({ exercise }: { exercise: Exercise }) {
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="shrink-0 text-ink-subtle"
         >
-          <ChevronDown size={16} aria-hidden />
+          <Caret size={16} />
         </motion.span>
       </button>
 
@@ -484,7 +478,7 @@ function PlanThumbnail({ exercise }: { exercise: Exercise }) {
   if (!image) {
     return (
       <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sunken">
-        <Dumbbell size={16} className="text-ink-subtle" aria-hidden />
+        <KitMark id="dumbbell" size={20} className="text-line-strong" />
       </span>
     );
   }

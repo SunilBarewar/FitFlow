@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, ChevronDown, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useId, useState } from "react";
 import { cn } from "@/lib/utils/cn";
+import { Caret, Tick } from "./glyphs";
 
 /* ─── Shared controls for everything the coach puts in the thread ───
    One vocabulary: a card, a row you choose, a chip you toggle, a
@@ -11,6 +11,17 @@ import { cn } from "@/lib/utils/cn";
    the same way, so the whole conversation feels like one object. */
 
 const SPRING = { type: "spring", stiffness: 420, damping: 32 } as const;
+
+/** The pastel a block tints itself with, usually taken from its artwork. */
+export type Tone = "accent" | "peach" | "mint" | "sky" | "violet";
+
+const TINTS = {
+  accent: "bg-accent-soft text-accent-edge",
+  peach: "bg-peach-tint text-peach-ink",
+  mint: "bg-mint-tint text-mint-ink",
+  sky: "bg-sky-tint text-sky-ink",
+  violet: "bg-violet-tint text-violet-ink",
+} as const;
 
 /** The container every interactive coach block sits in. */
 export function BlockCard({
@@ -37,35 +48,29 @@ export function BlockCard({
 
 /** Icon, question, one helper line, and the answer state on the right. */
 export function BlockHeader({
-  icon: Icon,
+  glyph,
   title,
   subtitle,
   status,
   tone = "accent",
 }: {
-  icon: LucideIcon;
+  /** A drawn mark from ./glyphs — never a stock icon. */
+  glyph: React.ReactNode;
   title: string;
   subtitle?: string;
   status?: string;
-  tone?: "accent" | "mint" | "sky" | "violet";
+  tone?: Tone;
 }) {
-  const surfaces = {
-    accent: "bg-accent-soft text-accent-edge",
-    mint: "bg-mint-tint text-mint-ink",
-    sky: "bg-sky-tint text-sky-ink",
-    violet: "bg-violet-tint text-violet-ink",
-  } as const;
-
   return (
     <div className="flex items-start gap-3 p-4">
       <span
         aria-hidden
         className={cn(
           "flex size-9 shrink-0 items-center justify-center rounded-xl",
-          surfaces[tone],
+          TINTS[tone],
         )}
       >
-        <Icon size={17} />
+        {glyph}
       </span>
       <div className="min-w-0 flex-1">
         <h3 className="text-[15px] leading-snug font-semibold tracking-[-0.01em] text-ink">
@@ -98,7 +103,7 @@ export function BlockHeader({
 export function OptionRow({
   title,
   description,
-  icon: Icon,
+  glyph,
   tone = "accent",
   selected,
   dimmed,
@@ -108,8 +113,8 @@ export function OptionRow({
 }: {
   title: string;
   description?: string;
-  icon?: LucideIcon;
-  tone?: "accent" | "mint" | "sky" | "violet";
+  glyph?: React.ReactNode;
+  tone?: Tone;
   selected: boolean;
   dimmed?: boolean;
   disabled?: boolean;
@@ -117,12 +122,6 @@ export function OptionRow({
   role?: "button" | "radio";
 }) {
   const reduceMotion = useReducedMotion();
-  const surfaces = {
-    accent: "bg-accent-soft text-accent-edge",
-    mint: "bg-mint-tint text-mint-ink",
-    sky: "bg-sky-tint text-sky-ink",
-    violet: "bg-violet-tint text-violet-ink",
-  } as const;
 
   return (
     <motion.button
@@ -141,15 +140,15 @@ export function OptionRow({
         disabled ? "cursor-default" : "cursor-pointer",
       )}
     >
-      {Icon ? (
+      {glyph ? (
         <span
           aria-hidden
           className={cn(
             "flex size-9 shrink-0 items-center justify-center rounded-xl",
-            surfaces[tone],
+            TINTS[tone],
           )}
         >
-          <Icon size={17} />
+          {glyph}
         </span>
       ) : null}
       <span className="min-w-0 flex-1">
@@ -171,10 +170,20 @@ export function OptionRow({
 export function Indicator({
   selected,
   shape = "circle",
+  tone = "accent",
 }: {
   selected: boolean;
   shape?: "circle" | "square";
+  tone?: Tone;
 }) {
+  const marks = {
+    accent: "border-accent-edge bg-accent-edge",
+    peach: "border-peach-ink bg-peach-ink",
+    mint: "border-mint-ink bg-mint-ink",
+    sky: "border-sky-ink bg-sky-ink",
+    violet: "border-violet-ink bg-violet-ink",
+  } as const;
+
   return (
     <span
       aria-hidden
@@ -182,7 +191,7 @@ export function Indicator({
         "flex size-5 shrink-0 items-center justify-center border-2 transition-colors duration-150",
         shape === "circle" ? "rounded-full" : "rounded-md",
         selected
-          ? "border-accent-edge bg-accent-edge text-white"
+          ? `${marks[tone]} text-white`
           : "border-line-strong text-transparent",
       )}
     >
@@ -194,7 +203,7 @@ export function Indicator({
             exit={{ scale: 0.3, opacity: 0 }}
             transition={SPRING}
           >
-            <Check size={12} strokeWidth={3.5} />
+            <Tick size={12} />
           </motion.span>
         ) : null}
       </AnimatePresence>
@@ -202,15 +211,18 @@ export function Indicator({
   );
 }
 
-/** A chip you can switch on and off. */
+/** A chip you can switch on and off. With a glyph, the mark itself
+ *  flips to a tick when the chip is on — the switch is the drawing. */
 export function ToggleChip({
   label,
+  glyph,
   selected,
   dimmed,
   disabled,
   onToggle,
 }: {
   label: string;
+  glyph?: React.ReactNode;
   selected: boolean;
   dimmed?: boolean;
   disabled?: boolean;
@@ -234,7 +246,37 @@ export function ToggleChip({
         disabled ? "cursor-default" : "cursor-pointer",
       )}
     >
-      <Indicator selected={selected} shape="square" />
+      {glyph ? (
+        <span className="relative flex size-5 items-center justify-center">
+          <AnimatePresence initial={false} mode="wait">
+            {selected ? (
+              <motion.span
+                key="on"
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={SPRING}
+                className="flex size-5 items-center justify-center rounded-md bg-accent-edge text-white"
+              >
+                <Tick size={11} />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="off"
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.6, opacity: 0 }}
+                transition={{ duration: 0.12 }}
+                className="text-ink-subtle"
+              >
+                {glyph}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </span>
+      ) : (
+        <Indicator selected={selected} shape="square" />
+      )}
       {label}
     </motion.button>
   );
@@ -282,13 +324,17 @@ export function Switch({
 export function Disclosure({
   label,
   summary,
-  icon: Icon,
+  glyph,
+  glyphTone,
   defaultOpen = false,
   children,
 }: {
-  label: string;
+  /** Rich, so a block can mute an "(optional)" suffix inside the label. */
+  label: React.ReactNode;
   summary?: string;
-  icon?: LucideIcon;
+  glyph?: React.ReactNode;
+  /** Left unset the tile stays quiet; set, it picks up that tint. */
+  glyphTone?: Tone;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
@@ -310,12 +356,15 @@ export function Disclosure({
         onClick={() => setOpen((value) => !value)}
         className="flex min-h-13 w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-sunken"
       >
-        {Icon ? (
+        {glyph ? (
           <span
             aria-hidden
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sunken text-ink-muted"
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-lg",
+              glyphTone ? TINTS[glyphTone] : "bg-sunken text-ink-muted",
+            )}
           >
-            <Icon size={15} />
+            {glyph}
           </span>
         ) : null}
         <span className="min-w-0 flex-1">
@@ -333,7 +382,7 @@ export function Disclosure({
           transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
           className="shrink-0 text-ink-subtle"
         >
-          <ChevronDown size={18} aria-hidden />
+          <Caret size={18} />
         </motion.span>
       </button>
 
@@ -360,32 +409,49 @@ export function Disclosure({
 export function BlockAction({
   label,
   hint,
+  hintGlyph,
+  glyph,
   disabled,
   onClick,
 }: {
   label: string;
   hint?: string;
+  /** A small mark in front of the hint, when the hint is an aside. */
+  hintGlyph?: React.ReactNode;
+  /** A mark after the label, for actions that go somewhere. */
+  glyph?: React.ReactNode;
   disabled?: boolean;
   onClick: () => void;
 }) {
+  /* The footer measures itself rather than the card, so every block gets
+     the same behaviour wherever it sits: on a phone the hint sits above
+     a full-width button instead of fighting it for the same line. */
   return (
-    <div className="flex items-center gap-3 border-t border-line p-3">
-      {hint ? (
-        <p className="min-w-0 flex-1 text-[12px] leading-snug text-ink-muted">
-          {hint}
-        </p>
-      ) : (
-        <span className="flex-1" />
-      )}
-      <motion.button
-        type="button"
-        disabled={disabled}
-        onClick={onClick}
-        whileTap={disabled ? undefined : { scale: 0.97 }}
-        className="h-10 shrink-0 rounded-full bg-ink px-5 text-[13px] font-semibold text-white transition-colors hover:bg-ink-soft disabled:opacity-35"
-      >
-        {label}
-      </motion.button>
+    <div className="@container/action border-t border-line p-3">
+      <div className="flex flex-col gap-2.5 @[22rem]/action:flex-row @[22rem]/action:items-center @[22rem]/action:gap-3">
+        {hint ? (
+          <p className="flex min-w-0 items-center gap-1.5 text-[12px] leading-snug text-ink-muted @[22rem]/action:flex-1">
+            {hintGlyph ? (
+              <span aria-hidden className="shrink-0 text-ink-subtle">
+                {hintGlyph}
+              </span>
+            ) : null}
+            {hint}
+          </p>
+        ) : (
+          <span className="@[22rem]/action:flex-1" />
+        )}
+        <motion.button
+          type="button"
+          disabled={disabled}
+          onClick={onClick}
+          whileTap={disabled ? undefined : { scale: 0.97 }}
+          className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-1.5 rounded-full bg-ink px-5 text-[13px] font-semibold text-white transition-colors hover:bg-ink-soft disabled:opacity-35 @[22rem]/action:h-10 @[22rem]/action:w-auto"
+        >
+          {label}
+          {glyph}
+        </motion.button>
+      </div>
     </div>
   );
 }
@@ -393,11 +459,11 @@ export function BlockAction({
 /** A quiet, bordered action for the "or do the other thing" case. */
 export function SecondaryAction({
   label,
-  icon: Icon,
+  glyph,
   onClick,
 }: {
   label: string;
-  icon?: LucideIcon;
+  glyph?: React.ReactNode;
   onClick: () => void;
 }) {
   return (
@@ -407,7 +473,7 @@ export function SecondaryAction({
       whileTap={{ scale: 0.97 }}
       className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
     >
-      {Icon ? <Icon size={14} aria-hidden /> : null}
+      {glyph}
       {label}
     </motion.button>
   );

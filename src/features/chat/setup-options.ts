@@ -29,21 +29,29 @@ export type MuscleOption = {
   region: BodyRegion;
 };
 
-export const EXPERIENCE_OPTIONS: SetupOption[] = [
+/** An experience answer also carries what that level buys the user. */
+export type ExperienceOption = SetupOption & { tags: string[] };
+
+export const EXPERIENCE_OPTIONS: ExperienceOption[] = [
   {
     id: "new",
     label: "I'm new to working out",
-    description: "We'll keep your first plan simple and approachable.",
+    description:
+      "I'm just getting started or haven't trained regularly before.",
+    tags: ["Simple plan", "Beginner friendly", "Build good habits"],
   },
   {
     id: "returning",
-    label: "Worked out before (less than 6 months)",
-    description: "We'll help you build a steady routine.",
+    label: "I've worked out before",
+    description:
+      "I've trained in the past but haven't been consistent recently.",
+    tags: ["Steady routine", "Balanced plan", "Get back on track"],
   },
   {
     id: "regular",
-    label: "I work out consistently (more than 6 months)",
-    description: "We can use more variety and more challenging movements.",
+    label: "I work out consistently",
+    description: "I have been training regularly for more than 6 months.",
+    tags: ["More variety", "Challenging workouts", "Progress further"],
   },
 ];
 

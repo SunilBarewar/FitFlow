@@ -1,15 +1,5 @@
 "use client";
 
-import {
-  ArrowRight,
-  CalendarDays,
-  Check,
-  Clock,
-  RefreshCw,
-  Repeat2,
-  Sparkles,
-  Timer,
-} from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import type { ChatBlock } from "@/features/chat/types";
@@ -20,12 +10,23 @@ import {
   Indicator,
   SecondaryAction,
 } from "../ui/controls";
+import {
+  ArrowMark,
+  KitMark,
+  MinutesMark,
+  SessionDelta,
+  SwapMark,
+  Tick,
+  WeekRibbon,
+} from "../ui/glyphs";
 
 type PlanCreatedBlock = Extract<ChatBlock, { type: "plan_created" }>;
 type SessionMutationBlock = Extract<ChatBlock, { type: "session_mutation" }>;
 type ExerciseOptionsBlock = Extract<ChatBlock, { type: "exercise_options" }>;
 type ExerciseSwapBlock = Extract<ChatBlock, { type: "exercise_swap" }>;
 
+/* The plan arrives as a shape, not a list of stats: seven bars, one per
+   day, tall where the work is and flat where the rest is. */
 export function PlanCreatedCard({
   block,
   onViewPlan,
@@ -34,36 +35,26 @@ export function PlanCreatedCard({
   onViewPlan: () => void;
 }) {
   const { plan } = block;
-  const trainingDays = plan.days.filter(
-    (day) => day.exercises.length > 0,
-  ).length;
+  const todayLabel = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+  });
+  const days = plan.days.map((day) => ({
+    label: day.label,
+    exercises: day.exercises.length,
+  }));
+  const trainingDays = days.filter((day) => day.exercises > 0).length;
 
   return (
     <BlockCard className="max-w-sm">
       <BlockHeader
-        icon={Sparkles}
+        glyph={<MinutesMark minutes={plan.minutesPerSession} size={18} />}
         title={plan.name}
-        subtitle="Your week is ready — here's the shape of it."
+        subtitle={`${trainingDays} training days · ${plan.minutesPerSession} min a session`}
         tone="mint"
       />
 
-      <div className="grid grid-cols-3 divide-x divide-line border-y border-line">
-        {[
-          { icon: CalendarDays, value: `${plan.daysPerWeek}`, label: "days" },
-          { icon: Clock, value: `${plan.minutesPerSession}`, label: "min" },
-          { icon: Repeat2, value: `${trainingDays}`, label: "sessions" },
-        ].map((fact) => (
-          <div
-            key={fact.label}
-            className="flex flex-col items-center gap-0.5 py-3"
-          >
-            <fact.icon size={14} className="text-ink-subtle" aria-hidden />
-            <span className="font-brand-mono text-[17px] leading-none text-ink">
-              {fact.value}
-            </span>
-            <span className="text-[11px] text-ink-muted">{fact.label}</span>
-          </div>
-        ))}
+      <div className="border-y border-line px-4 py-4">
+        <WeekRibbon days={days} todayLabel={todayLabel} />
       </div>
 
       <div className="p-3">
@@ -74,16 +65,19 @@ export function PlanCreatedCard({
           className="group flex h-11 w-full items-center justify-center gap-2 rounded-full bg-ink text-[14px] font-semibold text-white transition-colors hover:bg-ink-soft"
         >
           See your plan
-          <ArrowRight
-            size={15}
+          <motion.span
+            aria-hidden
             className="transition-transform group-hover:translate-x-0.5"
-          />
+          >
+            <ArrowMark size={15} />
+          </motion.span>
         </motion.button>
       </div>
     </BlockCard>
   );
 }
 
+/* What changed today, measured against what it was. */
 export function SessionMutationBlock({
   block,
   resolved,
@@ -98,32 +92,35 @@ export function SessionMutationBlock({
   return (
     <BlockCard className="max-w-md">
       <BlockHeader
-        icon={Timer}
+        glyph={<MinutesMark minutes={block.toMinutes} size={18} />}
         title="Today, adjusted"
         subtitle="Your weekly plan stays exactly as it is."
       />
 
-      <dl className="flex flex-col gap-2 border-t border-line p-4">
-        <ChangeRow
-          label="Duration"
-          from={`${block.fromMinutes} min`}
-          to={`${block.toMinutes} min`}
+      <div className="border-t border-line p-4">
+        <SessionDelta
+          fromMinutes={block.fromMinutes}
+          toMinutes={block.toMinutes}
         />
-        <ChangeRow
-          label="Equipment"
-          from={block.fromEquipment}
-          to={block.toEquipment}
-        />
-        <ChangeRow
-          label="Intensity"
-          from={block.fromIntensity}
-          to={block.toIntensity}
-        />
-      </dl>
+
+        <dl className="flex flex-col gap-2 pt-4">
+          <ChangeRow
+            label="Equipment"
+            from={block.fromEquipment}
+            to={block.toEquipment}
+            glyph={<KitMark id={block.toEquipment} size={15} />}
+          />
+          <ChangeRow
+            label="Intensity"
+            from={block.fromIntensity}
+            to={block.toIntensity}
+          />
+        </dl>
+      </div>
 
       {resolved ? (
         <p className="flex items-center gap-1.5 border-t border-line px-4 py-3 text-[13px] font-semibold text-mint-ink">
-          <Check size={14} strokeWidth={3} aria-hidden /> Applied to today
+          <Tick size={14} /> Applied to today
         </p>
       ) : (
         <div className="flex gap-2 border-t border-line p-3">
@@ -146,28 +143,26 @@ function ChangeRow({
   label,
   from,
   to,
+  glyph,
 }: {
   label: string;
   from: string;
   to: string;
+  glyph?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 text-[13px]">
       <dt className="text-ink-muted">{label}</dt>
       <dd className="flex min-w-0 items-center gap-2">
         <span className="truncate text-ink-subtle line-through">{from}</span>
-        <ArrowRight
-          size={12}
-          className="shrink-0 text-ink-subtle"
-          aria-hidden
-        />
         <motion.span
           initial={{ opacity: 0, x: -4 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="truncate rounded-full bg-accent-soft px-2 py-0.5 font-semibold text-ink"
+          className="flex min-w-0 items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-semibold text-ink"
         >
-          {to}
+          {glyph ? <span className="text-accent-edge">{glyph}</span> : null}
+          <span className="truncate">{to}</span>
         </motion.span>
       </dd>
     </div>
@@ -222,6 +217,13 @@ export function ExerciseOptionsBlock({
                 isSelected && "bg-accent-soft/30",
               )}
             >
+              <span
+                aria-hidden
+                className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sunken text-ink-muted"
+              >
+                <KitMark id={option.equipment} size={17} />
+              </span>
+
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[14px] leading-tight font-semibold">
                   {option.name}
@@ -262,6 +264,7 @@ export function ExerciseOptionsBlock({
   );
 }
 
+/* One exercise handing over to another, drawn as a handover. */
 export function ExerciseSwapBlock({ block }: { block: ExerciseSwapBlock }) {
   return (
     <BlockCard className="max-w-md">
@@ -270,8 +273,8 @@ export function ExerciseSwapBlock({ block }: { block: ExerciseSwapBlock }) {
           {block.sessionLabel}
         </p>
         {block.scope ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sunken px-2.5 py-1 text-[11px] font-medium text-ink-muted">
-            <RefreshCw size={10} aria-hidden />
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sunken px-2.5 py-1 text-[11px] font-medium text-ink-muted">
+            <SwapMark size={12} />
             {block.scope === "all" ? "All sessions" : "Today only"}
           </span>
         ) : null}
@@ -282,26 +285,29 @@ export function ExerciseSwapBlock({ block }: { block: ExerciseSwapBlock }) {
           <p className="truncate text-[13px] font-medium text-ink-subtle line-through">
             {block.from.name}
           </p>
-          <p className="truncate pt-1 text-[12px] text-ink-subtle">
-            {block.from.sets} × {block.from.reps} · {block.from.equipment}
+          <p className="flex items-center gap-1.5 truncate pt-1 text-[12px] text-ink-subtle">
+            <KitMark id={block.from.equipment} size={14} />
+            {block.from.sets} × {block.from.reps}
           </p>
         </div>
 
         <motion.span
+          aria-hidden
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 24 }}
-          className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-edge"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-edge"
         >
-          <ArrowRight size={14} aria-hidden />
+          <SwapMark size={16} />
         </motion.span>
 
         <div className="min-w-0">
           <p className="truncate text-[13px] font-semibold text-ink">
             {block.to.name}
           </p>
-          <p className="truncate pt-1 text-[12px] text-ink-muted">
-            {block.to.sets} × {block.to.reps} · {block.to.equipment}
+          <p className="flex items-center gap-1.5 truncate pt-1 text-[12px] text-ink-muted">
+            <KitMark id={block.to.equipment} size={14} />
+            {block.to.sets} × {block.to.reps}
           </p>
         </div>
       </div>

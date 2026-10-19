@@ -1,6 +1,5 @@
 "use client";
 
-import { LogOut, RotateCcw, User } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import {
@@ -20,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils/cn";
 import { SegmentedSwitch } from "./ui/controls";
+import { AccountMark, ExitMark, RestartMark } from "./ui/glyphs";
 
 export type WorkspaceView = "coach" | "plan";
 
@@ -131,7 +131,7 @@ export function ChatHeader({
                 setConfirmOpen(true);
               }}
             >
-              <RotateCcw size={17} aria-hidden /> Start new plan
+              <RestartMark size={17} /> Start new plan
             </button>
             <hr className="my-1 h-px border-0 bg-line" />
             <button
@@ -144,7 +144,7 @@ export function ChatHeader({
                 onSignOut();
               }}
             >
-              <LogOut size={17} aria-hidden /> Log out
+              <ExitMark size={17} /> Log out
             </button>
           </motion.div>,
           document.body,
@@ -196,7 +196,7 @@ export function ChatHeader({
             onClick={() => setOpen((value) => !value)}
             className="flex size-10 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-soft transition-colors hover:bg-sunken disabled:pointer-events-none disabled:opacity-50"
           >
-            <User size={18} aria-hidden />
+            <AccountMark size={18} />
           </button>
         </div>
         {menu}
