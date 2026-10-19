@@ -28,12 +28,12 @@ export function ChatShell({
   const planShowing = hasPlan && view === "plan";
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 gap-3 px-3 pt-3 sm:px-4 sm:pt-4">
+    <div className="relative mx-auto flex min-h-0 w-full max-w-7xl flex-1 gap-3 px-3 pt-3 sm:px-4 sm:pt-4">
       <section
         aria-label="Conversation with your coach"
         className={cn(
-          "min-h-0 min-w-0 flex-1 flex-col",
-          planShowing ? "hidden lg:flex" : "flex",
+          "flex min-h-0 min-w-0 flex-1 flex-col",
+          planShowing && "max-lg:invisible max-lg:pointer-events-none",
         )}
       >
         <div className={SURFACE}>
@@ -61,7 +61,7 @@ export function ChatShell({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: reduceMotion ? 0 : 24 }}
                 transition={{ duration: 0.22, ease: [0.2, 0.7, 0.2, 1] }}
-                className="flex min-h-0 min-w-0 flex-1 flex-col lg:hidden"
+                className="absolute inset-0 z-10 flex min-h-0 min-w-0 flex-col lg:hidden"
               >
                 <div className={SURFACE}>
                   <LivePanel conversation={conversation} />

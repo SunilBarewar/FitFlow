@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useId } from "react";
 import type { PanelTab } from "@/features/chat/types";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
 import { PlanTab } from "./panel/plan-tab";
@@ -14,12 +15,13 @@ export function LivePanel({
   conversation: ReturnType<typeof useChatConversation>;
 }) {
   const { panel, setPanelTab, todayLog, setExerciseLog } = conversation;
+  const tabIndicatorLayoutId = useId();
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-4 pb-3">
         <SegmentedSwitch<PanelTab>
-          layoutId="live-panel-tab"
+          layoutId={tabIndicatorLayoutId}
           value={panel.tab}
           onChange={setPanelTab}
           options={[

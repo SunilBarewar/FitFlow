@@ -23,6 +23,13 @@ import { AccountMark, ExitMark, RestartMark } from "./ui/glyphs";
 
 export type WorkspaceView = "coach" | "plan";
 
+/** Spelled out, because a reset takes everything with it. */
+const RESET_ERASES = [
+  "Your current plan and every workout in it",
+  "All logged sets, reps, and progress",
+  "The whole chat history with your coach",
+];
+
 const menuItem =
   "flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-semibold outline-none transition-colors hover:bg-sunken disabled:pointer-events-none disabled:opacity-50";
 
@@ -53,6 +60,7 @@ export function ChatHeader({
     right: number;
   } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasResetting = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const busy = signOutPending || startNewChatPending;
@@ -80,6 +88,16 @@ export function ChatHeader({
       window.removeEventListener("scroll", updatePosition, true);
     };
   }, [open, updatePosition]);
+
+  /** Hold the dialog open through the reset, then dismiss it once it lands. */
+  useEffect(() => {
+    if (startNewChatPending) {
+      wasResetting.current = true;
+    } else if (wasResetting.current) {
+      wasResetting.current = false;
+      setConfirmOpen(false);
+    }
+  }, [startNewChatPending]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,7 +149,7 @@ export function ChatHeader({
                 setConfirmOpen(true);
               }}
             >
-              <RestartMark size={17} /> Start new plan
+              <RestartMark size={17} /> Reset session
             </button>
             <hr className="my-1 h-px border-0 bg-line" />
             <button
@@ -202,25 +220,52 @@ export function ChatHeader({
         {menu}
       </header>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogCenterContent
-          title="Start a new plan?"
-          description="This permanently deletes your current plan, all workout progress, and your entire chat history. This can't be undone."
-        >
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(next) => {
+          if (startNewChatPending) return;
+          setConfirmOpen(next);
+        }}
+      >
+        <DialogCenterContent title="Reset this session?">
+          <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-soft">
+            You start over with a fresh coach. Resetting erases:
+          </p>
+
+          <ul className="mt-3.5 flex flex-col gap-2 rounded-2xl border border-line bg-sunken/60 p-3.5">
+            {RESET_ERASES.map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-2.5 text-[13.5px] font-medium"
+              >
+                <span
+                  aria-hidden
+                  className="mt-[7px] size-1.5 shrink-0 rounded-full bg-danger"
+                />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-3 text-[12.5px] leading-relaxed text-ink-soft">
+            Your account and sign-in stay as they are. Nothing else can be
+            recovered — there is no undo.
+          </p>
+
           <div className="mt-5 flex flex-col gap-2">
             <button
               type="button"
               disabled={startNewChatPending}
               className="flex h-11 w-full items-center justify-center rounded-full bg-danger px-4 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-50"
-              onClick={() => {
-                setConfirmOpen(false);
-                onStartNewChat();
-              }}
+              onClick={onStartNewChat}
             >
-              Yes, start new plan
+              {startNewChatPending ? "Resetting…" : "Reset session"}
             </button>
-            <DialogClose className="flex h-11 w-full items-center justify-center rounded-full border border-line bg-surface px-4 text-[14px] font-semibold text-ink-soft transition-colors hover:bg-sunken">
-              Cancel
+            <DialogClose
+              disabled={startNewChatPending}
+              className="flex h-11 w-full items-center justify-center rounded-full border border-line bg-surface px-4 text-[14px] font-semibold text-ink-soft transition-colors hover:bg-sunken disabled:pointer-events-none disabled:opacity-50"
+            >
+              Keep this session
             </DialogClose>
           </div>
         </DialogCenterContent>
