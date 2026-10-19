@@ -19,7 +19,7 @@ export type StoredMessage = {
 export type ConversationData = {
   hasPlan: boolean;
   activePlan: Plan | null;
-  /** Today's workout session — the same one /home edits, and what the Today
+  /** Today's workout session — the same one /plan edits, and what the Today
    * tab renders. The panel's DayLog is derived from it on the client. */
   todaySession: WorkoutSession | null;
   messages: StoredMessage[];

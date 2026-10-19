@@ -28,7 +28,7 @@ export function ClosingCard({ isLoggedIn }: { isLoggedIn: boolean }) {
             that knows what you can do.
           </p>
           <Link
-            href={isLoggedIn ? "/home" : "/sign-up"}
+            href={isLoggedIn ? "/plan" : "/sign-up"}
             className="group mt-9 inline-flex h-12 items-center gap-2 rounded-full bg-ink px-7 text-[15px] font-semibold text-white transition-colors hover:bg-ink-soft"
           >
             {isLoggedIn ? "Open FitFlow" : "Start training free"}

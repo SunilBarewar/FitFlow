@@ -79,7 +79,7 @@ export function LandingNavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
 
         <div className="flex items-center gap-1.5">
           <Link
-            href={isLoggedIn ? "/home" : "/sign-up"}
+            href={isLoggedIn ? "/plan" : "/sign-up"}
             className="hidden h-9 items-center rounded-full bg-ink px-4 text-[13px] leading-none font-semibold text-white transition-colors hover:bg-ink-soft sm:inline-flex"
           >
             {isLoggedIn ? "Open FitFlow" : "Start free"}
@@ -109,7 +109,7 @@ export function LandingNavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
             </a>
           ))}
           <Link
-            href={isLoggedIn ? "/home" : "/sign-up"}
+            href={isLoggedIn ? "/plan" : "/sign-up"}
             onClick={() => setMenuOpen(false)}
             className="mt-1 flex h-11 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white sm:hidden"
           >

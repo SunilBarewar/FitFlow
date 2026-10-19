@@ -8,12 +8,12 @@ import { getSessionFromCookies } from "@/lib/auth/session";
 import { getTodayRef } from "@/lib/date/today";
 import { connectDB } from "@/lib/db";
 import { ConversationModel } from "@/models/conversation";
-import { HomePageClient } from "./home-page-client";
+import { PlanPageClient } from "./plan-page-client";
 
-export default async function HomePage() {
+export default async function PlanPage() {
   const session = await getSessionFromCookies();
   if (!session) {
-    redirect("/sign-in?callbackUrl=/home");
+    redirect("/sign-in?callbackUrl=/plan");
   }
 
   const { date, dayLabel } = getTodayRef();
@@ -39,7 +39,7 @@ export default async function HomePage() {
   const week = await getWeekSummary(session.sub, date);
 
   return (
-    <HomePageClient
+    <PlanPageClient
       initial={{ session: workoutSession, week }}
       plan={plan}
       userName={session.name?.split(" ")[0] ?? ""}

@@ -21,7 +21,7 @@ function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/home";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/plan";
 
   async function handleSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -32,7 +32,7 @@ function SignInForm() {
     }
     try {
       await signIn.mutateAsync({ email, password });
-      router.push(callbackUrl.startsWith("/") ? callbackUrl : "/home");
+      router.push(callbackUrl.startsWith("/") ? callbackUrl : "/plan");
     } catch (err) {
       setError(
         getErrorMessage(err, "We couldn't sign you in. Please try again."),

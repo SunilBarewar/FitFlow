@@ -9,7 +9,7 @@ import { HomeHeader } from "@/features/workout/components/home-header";
 import { WorkoutHome } from "@/features/workout/components/workout-home";
 import type { WorkoutHomeData } from "@/features/workout/use-workout-session";
 
-export function HomePageClient({
+export function PlanPageClient({
   initial,
   plan,
 }: {

@@ -160,7 +160,7 @@ export function useChatConversation(
 
   const [hasPlan, setHasPlan] = useState(Boolean(initialData?.hasPlan));
   const [startNewChatPending, setStartNewChatPending] = useState(false);
-  // Today's session, exactly as /home has it. The panel's Today tab and its
+  // Today's session, exactly as /plan has it. The panel's Today tab and its
   // DayLog are both read off this, so an edit made on either page shows up on
   // the other instead of each surface keeping its own idea of today.
   const [todaySession, setTodaySession] = useState<WorkoutSession | null>(

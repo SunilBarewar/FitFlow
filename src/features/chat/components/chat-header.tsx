@@ -206,12 +206,12 @@ export function ChatHeader({
           <div className="flex shrink-0 items-center gap-2">
             {showViewSwitch ? (
               <Link
-                href="/home"
+                href="/plan"
                 aria-label="Today's workout"
                 className="flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
               >
                 <HomeMark size={16} />
-                <span className="hidden sm:inline">Home</span>
+                <span className="hidden sm:inline">Plan</span>
               </Link>
             ) : null}
 

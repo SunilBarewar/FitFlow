@@ -5,7 +5,7 @@ import type { WorkoutSession } from "../types";
 /**
  * One tab, one truth about today's session.
  *
- * /home and /chat are separate routes, so only one of them is ever mounted —
+ * /plan and /chat are separate routes, so only one of them is ever mounted —
  * but module state outlives a client-side navigation, which makes this the
  * cheapest way for the page being left to hand today's session to the page
  * being opened. Both sides already write to the same store (workout_sessions);

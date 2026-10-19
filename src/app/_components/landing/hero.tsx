@@ -42,7 +42,7 @@ export function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
 
           <div className="brand-rise pt-9" style={{ animationDelay: "180ms" }}>
             <Link
-              href={isLoggedIn ? "/home" : "/sign-up"}
+              href={isLoggedIn ? "/plan" : "/sign-up"}
               className="group inline-flex h-12 items-center gap-2 rounded-full bg-ink px-7 text-[15px] font-semibold text-white transition-colors hover:bg-ink-soft"
             >
               {isLoggedIn ? "Open FitFlow" : "Start training free"}
