@@ -1,5 +1,6 @@
 import type { ExerciseLogStatus } from "@/features/chat/types";
 import { isUsableDate, requireUser } from "@/features/workout/lib/guards";
+import { sessionStoreApiError } from "@/features/workout/lib/handle-session-error";
 import { setExerciseStatus } from "@/features/workout/lib/session-store";
 import { apiError } from "@/lib/utils/http";
 
@@ -35,13 +36,18 @@ export async function PATCH(request: Request) {
     return apiError("Invalid exercise update.", 400, "VALIDATION_ERROR");
   }
 
-  const session = await setExerciseStatus(
-    userId,
-    body.date,
-    body.exerciseId,
-    body.status,
-    body.note,
-  );
+  let session;
+  try {
+    session = await setExerciseStatus(
+      userId,
+      body.date,
+      body.exerciseId,
+      body.status,
+      body.note,
+    );
+  } catch (error) {
+    return sessionStoreApiError(error);
+  }
   if (!session) return apiError("No session for that date.", 404, "NOT_FOUND");
 
   return Response.json({ session });

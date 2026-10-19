@@ -7,7 +7,9 @@ import {
   PlayMark,
   RestMark,
   SwapMark,
+  Tick,
 } from "@/features/chat/components/ui/glyphs";
+import { cn } from "@/lib/utils/cn";
 import type { SessionExercise, WorkoutSession } from "../types";
 import { SessionProgress } from "./session-progress";
 
@@ -19,7 +21,7 @@ export function SessionHero({
   doneCount,
   nextExercise,
   onStart,
-  onFinish,
+  onRequestFinish,
   onOpenAdjust,
   onResetToPlan,
   pendingAction,
@@ -28,7 +30,7 @@ export function SessionHero({
   doneCount: number;
   nextExercise?: SessionExercise;
   onStart: () => void;
-  onFinish: () => void;
+  onRequestFinish: () => void;
   onOpenAdjust: () => void;
   onResetToPlan: () => void;
   pendingAction: string | null;
@@ -36,15 +38,19 @@ export function SessionHero({
   const total = session.exercises.length;
   const isRest = session.status === "rest" || total === 0;
   const isComplete = session.status === "completed";
-  const left = total - doneCount;
+  const pendingCount = session.exercises.filter(
+    (exercise) => exercise.status === "pending",
+  ).length;
 
   const statusLine = isRest
     ? "Nothing planned — recovery counts as training."
     : isComplete
-      ? `All ${total} exercises logged. Nice work.`
-      : doneCount === 0
-        ? `${session.targetMinutes ?? 45} min · ${total} exercises`
-        : `${left} exercise${left === 1 ? "" : "s"} left · ${session.targetMinutes ?? 45} min`;
+      ? `Session locked · ${doneCount} logged. Nice work.`
+      : pendingCount === 0
+        ? "All set — tap Finish when you're ready to lock today."
+        : doneCount === 0
+          ? `${session.targetMinutes ?? 45} min · ${total} exercises`
+          : `${pendingCount} exercise${pendingCount === 1 ? "" : "s"} left · ${session.targetMinutes ?? 45} min`;
 
   return (
     <section className="overflow-hidden rounded-[26px] border border-line bg-surface shadow-card">
@@ -83,7 +89,7 @@ export function SessionHero({
         )}
       </div>
 
-      {session.adjustment ? (
+      {session.adjustment && !isComplete ? (
         <div className="flex items-start gap-2 border-t border-line bg-sky-tint/60 px-5 py-3 sm:px-6">
           <SwapMark size={15} className="mt-0.5 shrink-0 text-sky-ink" />
           <p className="min-w-0 flex-1 text-[12.5px] leading-snug text-ink-soft">
@@ -110,58 +116,98 @@ export function SessionHero({
       ) : null}
 
       {isRest ? null : (
-        <div className="flex flex-col gap-2 border-t border-line p-4 sm:flex-row sm:items-center sm:p-5">
-          {isComplete ? (
-            <p className="flex-1 text-[13.5px] font-semibold text-mint-ink">
-              Session complete — see you{" "}
-              {session.dayLabel === "Sunday" ? "Monday" : "tomorrow"}.
-            </p>
-          ) : (
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.99 }}
-              onClick={nextExercise ? onStart : onFinish}
-              disabled={pendingAction !== null}
-              className="flex h-12 flex-1 items-center gap-3 rounded-full bg-ink px-4 text-left text-white transition-colors hover:bg-ink-soft disabled:opacity-60"
-            >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/15">
-                <PlayMark size={14} className="ml-0.5" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-brand-mono text-[10px] tracking-wider text-white/60 uppercase">
-                  {doneCount === 0 ? "Start with" : "You're on"}
-                </span>
-                <span className="block truncate text-[14px] font-semibold">
-                  {nextExercise
-                    ? `${nextExercise.name} · ${nextExercise.sets} × ${nextExercise.reps}`
-                    : "Finish session"}
-                </span>
-              </span>
-              <Caret size={16} className="-rotate-90 shrink-0 text-white/60" />
-            </motion.button>
+        <div
+          className={cn(
+            "border-t px-4 py-4 sm:px-5 sm:py-4",
+            isComplete
+              ? "rounded-b-[25px] border-mint-edge bg-mint-tint"
+              : "border-line bg-sunken/40",
           )}
+        >
+          {isComplete ? (
+            <div className="flex w-full items-start gap-3 sm:items-center">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-mint-edge bg-surface text-mint-ink">
+                <Tick size={16} />
+              </span>
+              <span className="min-w-0 flex-1 pt-0.5">
+                <span className="block text-[14px] font-semibold leading-snug text-mint-ink">
+                  Session complete
+                </span>
+                <span className="mt-0.5 block text-[12.5px] leading-relaxed text-ink-soft">
+                  {doneCount} of {total} logged · locked for today
+                  <span className="text-ink-muted">
+                    {" "}
+                    · see you{" "}
+                    {session.dayLabel === "Sunday" ? "Monday" : "tomorrow"}
+                  </span>
+                </span>
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {nextExercise ? (
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.99 }}
+                  onClick={onStart}
+                  disabled={pendingAction !== null}
+                  className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full bg-ink px-4 text-left text-white transition-colors hover:bg-ink-soft disabled:opacity-60"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-ink">
+                    <PlayMark size={14} className="ml-0.5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-brand-mono text-[10px] tracking-wider text-accent-deep uppercase">
+                      {doneCount === 0 ? "Start with" : "Up next"}
+                    </span>
+                    <span className="block truncate text-[14px] font-semibold">
+                      {nextExercise.name} · {nextExercise.sets} ×{" "}
+                      {nextExercise.reps}
+                    </span>
+                  </span>
+                  <Caret
+                    size={16}
+                    className="-rotate-90 shrink-0 text-white/50"
+                  />
+                </motion.button>
+              ) : null}
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onOpenAdjust}
-              disabled={pendingAction !== null}
-              className="flex h-12 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken disabled:opacity-50"
-            >
-              <MinutesMark size={15} minutes={session.targetMinutes ?? 45} />
-              Adjust today
-            </button>
-            {!isComplete && doneCount > 0 ? (
-              <button
-                type="button"
-                onClick={onFinish}
-                disabled={pendingAction !== null}
-                className="flex h-12 items-center rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken disabled:opacity-50"
-              >
-                {pendingAction === "status:completed" ? "Finishing…" : "Finish"}
-              </button>
-            ) : null}
-          </div>
+              {/* On phones the two quiet actions share a row under Start;
+                  on wider screens they join its row (sm:contents). Finish
+                  turns ink when it's the only action left — everything is
+                  logged, so closing the day is the primary move. */}
+              <div className="flex gap-2 sm:contents">
+                <button
+                  type="button"
+                  onClick={onOpenAdjust}
+                  disabled={pendingAction !== null}
+                  className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken disabled:opacity-50 sm:h-12 sm:flex-none"
+                >
+                  <MinutesMark
+                    size={15}
+                    minutes={session.targetMinutes ?? 45}
+                  />
+                  Adjust today
+                </button>
+                <button
+                  type="button"
+                  onClick={onRequestFinish}
+                  disabled={pendingAction !== null}
+                  className={cn(
+                    "flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 sm:h-12 sm:flex-none sm:px-5",
+                    nextExercise
+                      ? "border border-line bg-surface text-ink-soft hover:bg-sunken"
+                      : "bg-ink text-white hover:bg-ink-soft",
+                  )}
+                >
+                  <Tick size={14} />
+                  {pendingAction === "status:completed"
+                    ? "Finishing…"
+                    : "Finish"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>

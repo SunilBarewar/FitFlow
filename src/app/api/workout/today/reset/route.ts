@@ -1,4 +1,5 @@
 import { isUsableDate, requireUser } from "@/features/workout/lib/guards";
+import { sessionStoreApiError } from "@/features/workout/lib/handle-session-error";
 import { resetSessionToPlan } from "@/features/workout/lib/session-store";
 import { apiError } from "@/lib/utils/http";
 
@@ -23,7 +24,12 @@ export async function POST(request: Request) {
     return apiError("Missing or invalid date.", 400, "VALIDATION_ERROR");
   }
 
-  const session = await resetSessionToPlan(userId, body.date, body.dayLabel);
+  let session;
+  try {
+    session = await resetSessionToPlan(userId, body.date, body.dayLabel);
+  } catch (error) {
+    return sessionStoreApiError(error);
+  }
   if (!session) return apiError("No active plan yet.", 404, "NO_ACTIVE_PLAN");
 
   return Response.json({ session });

@@ -1,4 +1,5 @@
 import { isUsableDate, requireUser } from "@/features/workout/lib/guards";
+import { sessionStoreApiError } from "@/features/workout/lib/handle-session-error";
 import { applySessionAdjustment } from "@/features/workout/lib/session-store";
 import type { SessionAdjustmentPatch } from "@/features/workout/types";
 import { apiError } from "@/lib/utils/http";
@@ -43,14 +44,19 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const session = await applySessionAdjustment(userId, body.date, {
-    reason: body.reason.trim(),
-    source: "user",
-    targetMinutes: body.targetMinutes,
-    remove: body.remove,
-    add: body.add,
-    replace: body.replace,
-  });
+  let session;
+  try {
+    session = await applySessionAdjustment(userId, body.date, {
+      reason: body.reason.trim(),
+      source: "user",
+      targetMinutes: body.targetMinutes,
+      remove: body.remove,
+      add: body.add,
+      replace: body.replace,
+    });
+  } catch (error) {
+    return sessionStoreApiError(error);
+  }
   if (!session) return apiError("No session for that date.", 404, "NOT_FOUND");
 
   return Response.json({ session });

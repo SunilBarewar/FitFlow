@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/components/ui/fit-toaster";
 import { RestMark } from "@/features/chat/components/ui/glyphs";
 import type { ExerciseLogStatus, Plan } from "@/features/chat/types";
@@ -11,6 +11,7 @@ import {
 } from "../use-workout-session";
 import { AdjustDialog } from "./adjust-dialog";
 import { ExerciseRow } from "./exercise-row";
+import { FinishSessionDialog } from "./finish-session-dialog";
 import { PlanWeek } from "./plan-week";
 import { SessionHero } from "./session-hero";
 import { WeekStrip } from "./week-strip";
@@ -26,6 +27,9 @@ export function WorkoutHome({
   plan: Plan;
 }) {
   const router = useRouter();
+  const onSessionError = useCallback((message: string) => {
+    toast.error(message);
+  }, []);
   const {
     session,
     week,
@@ -34,10 +38,11 @@ export function WorkoutHome({
     setSessionStatus,
     adjustSession,
     resetToPlan,
-  } = useWorkoutSession(initial, (message) => toast.error(message));
+  } = useWorkoutSession(initial, onSessionError);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
 
   const doneCount = useMemo(
     () =>
@@ -48,6 +53,13 @@ export function WorkoutHome({
   const nextExercise = session.exercises.find(
     (exercise) => exercise.status === "pending",
   );
+
+  const pendingExercises = useMemo(
+    () => session.exercises.filter((exercise) => exercise.status === "pending"),
+    [session.exercises],
+  );
+
+  const sessionLocked = session.status === "completed";
 
   function askCoach(prompt: string) {
     router.push(`/chat?prefill=${encodeURIComponent(prompt)}`);
@@ -63,7 +75,13 @@ export function WorkoutHome({
     if (status === "done" && expandedId === exerciseId) setExpandedId(null);
   }
 
+  function requestFinishSession() {
+    if (sessionLocked) return;
+    setFinishOpen(true);
+  }
+
   async function finishSession() {
+    setFinishOpen(false);
     const ok = await setSessionStatus("completed");
     if (ok) {
       toast.success("Session complete", {
@@ -100,7 +118,7 @@ export function WorkoutHome({
             doneCount={doneCount}
             nextExercise={nextExercise}
             onStart={() => setExpandedId(nextExercise ? nextExercise.id : null)}
-            onFinish={() => void finishSession()}
+            onRequestFinish={requestFinishSession}
             onOpenAdjust={() => setAdjustOpen(true)}
             onResetToPlan={() => void restorePlan()}
             pendingAction={pendingAction}
@@ -122,6 +140,7 @@ export function WorkoutHome({
                     key={exercise.id}
                     exercise={exercise}
                     index={index}
+                    locked={sessionLocked}
                     isCurrent={exercise.id === nextExercise?.id}
                     expanded={expandedId === exercise.id}
                     onToggleExpanded={() =>
@@ -176,6 +195,14 @@ export function WorkoutHome({
           askCoach("I need to change today's session — here's what's going on:")
         }
         pending={pendingAction === "adjust"}
+      />
+      <FinishSessionDialog
+        open={finishOpen}
+        onOpenChange={setFinishOpen}
+        pendingExercises={pendingExercises}
+        doneCount={doneCount}
+        onConfirm={() => void finishSession()}
+        pending={pendingAction === "status:completed"}
       />
     </div>
   );

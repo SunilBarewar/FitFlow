@@ -1,4 +1,5 @@
 import { isUsableDate, requireUser } from "@/features/workout/lib/guards";
+import { sessionStoreApiError } from "@/features/workout/lib/handle-session-error";
 import { setSessionStatus } from "@/features/workout/lib/session-store";
 import type { SessionStatus } from "@/features/workout/types";
 import { apiError } from "@/lib/utils/http";
@@ -32,7 +33,12 @@ export async function PATCH(request: Request) {
     return apiError("Invalid session status.", 400, "VALIDATION_ERROR");
   }
 
-  const session = await setSessionStatus(userId, body.date, body.status);
+  let session;
+  try {
+    session = await setSessionStatus(userId, body.date, body.status);
+  } catch (error) {
+    return sessionStoreApiError(error);
+  }
   if (!session) return apiError("No session for that date.", 404, "NOT_FOUND");
 
   return Response.json({ session });

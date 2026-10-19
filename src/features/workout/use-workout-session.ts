@@ -23,7 +23,8 @@ type Failure = (message: string) => void;
  * Writes are optimistic — a tap lands instantly and rolls back if the server
  * disagrees — because logging happens mid-set, with a sweaty thumb, on hotel
  * wifi. The one rule the client shares with the server is how a session's
- * status falls out of its exercises; see deriveSessionStatus in the store.
+ * status falls out of its exercises except completion — that requires Finish;
+ * see deriveSessionStatus in the store.
  */
 export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
   const [session, setSession] = useState(initial.session);
@@ -35,7 +36,10 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
   const latest = useRef(initial.session);
   latest.current = session;
 
+  const refreshInFlight = useRef(false);
   const refresh = useCallback(async () => {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
     const { date, dayLabel } = getTodayRef();
     try {
       const response = await fetch(
@@ -43,33 +47,53 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
       );
       if (!response.ok) return;
       const data = (await response.json()) as WorkoutHomeData;
-      setSession(data.session);
-      setWeek(data.week);
+      setSession((prev) =>
+        sessionSnapshot(prev) === sessionSnapshot(data.session)
+          ? prev
+          : data.session,
+      );
+      setWeek((prev) =>
+        weekSnapshot(prev) === weekSnapshot(data.week) ? prev : data.week,
+      );
     } catch {
       // A stale view is better than an error toast the user can't act on.
+    } finally {
+      refreshInFlight.current = false;
     }
   }, []);
 
   // The coach can change today's session from /chat while this page is open.
-  // Re-reading on focus keeps the two surfaces honest without a socket.
-  const lastRefresh = useRef(Date.now());
+  // Re-read only after the tab was actually hidden — not on window focus noise
+  // (devtools, dialogs, dev HMR) which was spamming /api/workout/today.
+  const lastRefresh = useRef(0);
   useEffect(() => {
-    function onFocus() {
-      if (document.visibilityState !== "visible") return;
-      if (Date.now() - lastRefresh.current < 10_000) return;
+    let tabWasHidden = document.visibilityState === "hidden";
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        tabWasHidden = true;
+        return;
+      }
+      if (!tabWasHidden) return;
+      tabWasHidden = false;
+      if (Date.now() - lastRefresh.current < 30_000) return;
       lastRefresh.current = Date.now();
       void refresh();
     }
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [refresh]);
 
   const setExerciseStatus = useCallback(
     (exerciseId: string, status: ExerciseLogStatus, note?: string) => {
+      if (latest.current.status === "completed") {
+        onError("Today's session is complete and can't be changed.");
+        return Promise.resolve();
+      }
+
       const rollback = latest.current;
 
       setSession((prev) => {
@@ -97,12 +121,19 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
               note,
             }),
           });
+          if (response.status === 409) {
+            throw new Error("immutable");
+          }
           if (!response.ok) throw new Error("save failed");
           const data = (await response.json()) as { session: WorkoutSession };
           setSession(data.session);
-        } catch {
+        } catch (error) {
           setSession(rollback);
-          onError("That didn't save. Your progress is safe — try again.");
+          onError(
+            error instanceof Error && error.message === "immutable"
+              ? "Today's session is complete and can't be changed."
+              : "That didn't save. Your progress is safe — try again.",
+          );
         }
       };
 
@@ -124,6 +155,14 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
       body: Record<string, unknown>,
       failure: string,
     ) => {
+      if (
+        latest.current.status === "completed" &&
+        action !== "status:completed"
+      ) {
+        onError("Today's session is complete and can't be changed.");
+        return false;
+      }
+
       setPendingAction(action);
       try {
         const response = await fetch(url, {
@@ -131,6 +170,10 @@ export function useWorkoutSession(initial: WorkoutHomeData, onError: Failure) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ date: latest.current.date, ...body }),
         });
+        if (response.status === 409) {
+          onError("Today's session is complete and can't be changed.");
+          return false;
+        }
         if (!response.ok) throw new Error(failure);
         const data = (await response.json()) as { session: WorkoutSession };
         setSession(data.session);
@@ -203,7 +246,28 @@ function statusFrom(
   if (exercises.length === 0) return "rest";
   const logged = exercises.filter((item) => item.status !== "pending").length;
   if (logged === 0) return current === "skipped" ? "skipped" : "not_started";
-  return logged === exercises.length ? "completed" : "in_progress";
+  if (current === "completed") return "completed";
+  return "in_progress";
+}
+
+function sessionSnapshot(session: WorkoutSession): string {
+  return JSON.stringify({
+    id: session.id,
+    status: session.status,
+    exercises: session.exercises.map((exercise) => ({
+      id: exercise.id,
+      status: exercise.status,
+      note: exercise.note ?? null,
+    })),
+    adjustment: session.adjustment?.adjustedAt ?? null,
+    targetMinutes: session.targetMinutes,
+  });
+}
+
+function weekSnapshot(week: WeekDaySummary[]): string {
+  return JSON.stringify(
+    week.map((day) => ({ date: day.date, status: day.status })),
+  );
 }
 
 async function refreshWeek(

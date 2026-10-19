@@ -1,5 +1,6 @@
 import type { ExerciseLogStatus } from "@/features/chat/types";
 import { sessionToDayLog } from "@/features/workout/lib/adapters";
+import { sessionStoreApiError } from "@/features/workout/lib/handle-session-error";
 import {
   ensureSession,
   setExerciseStatus,
@@ -56,13 +57,18 @@ export async function PATCH(request: Request) {
     return apiError("No active plan yet.", 404, "NOT_FOUND");
   }
 
-  const updated = await setExerciseStatus(
-    session.sub,
-    body.date,
-    body.exerciseId,
-    body.status,
-    body.note,
-  );
+  let updated;
+  try {
+    updated = await setExerciseStatus(
+      session.sub,
+      body.date,
+      body.exerciseId,
+      body.status,
+      body.note,
+    );
+  } catch (error) {
+    return sessionStoreApiError(error);
+  }
   if (!updated) {
     return apiError("No session for that date.", 404, "NOT_FOUND");
   }

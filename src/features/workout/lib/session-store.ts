@@ -9,6 +9,7 @@ import {
   type WorkoutSessionDoc,
   WorkoutSessionModel,
 } from "@/models/workout-session";
+import { SessionImmutableError } from "./guards";
 import type {
   SessionAdjustmentPatch,
   SessionExercise,
@@ -142,7 +143,16 @@ export function deriveSessionStatus(
     // An explicitly skipped day stays skipped until something is logged.
     return current === "skipped" ? "skipped" : "not_started";
   }
-  return logged === exercises.length ? "completed" : "in_progress";
+  // "Completed" is only set when the user taps Finish — not when every
+  // exercise happens to be logged.
+  if (current === "completed") return "completed";
+  return "in_progress";
+}
+
+function assertSessionMutable(session: LeanSession): void {
+  if (session.status === "completed") {
+    throw new SessionImmutableError();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -378,6 +388,7 @@ export async function setExerciseStatus(
     date,
   }).lean<LeanSession | null>();
   if (!session) return null;
+  assertSessionMutable(session);
 
   const exercises: SessionExerciseWrite[] = (session.exercises ?? []).map(
     toWrite,
@@ -449,16 +460,20 @@ export async function setSessionStatus(
   }).lean<LeanSession | null>();
   if (!session) return null;
 
+  if (session.status === "completed") {
+    if (status === "completed") return toDTO(session);
+    assertSessionMutable(session);
+  }
+
   let exercises: SessionExerciseWrite[] = (session.exercises ?? []).map(
     toWrite,
   );
-  const now = new Date();
 
   if (status === "completed") {
-    // Finishing marks whatever is still pending as done.
+    // Finishing closes the day — anything still open is skipped, not logged as done.
     exercises = exercises.map((item) =>
       item.status === "pending"
-        ? { ...item, status: "done", completedAt: now }
+        ? { ...item, status: "skipped", completedAt: null }
         : item,
     );
   } else if (status === "skipped") {
@@ -544,6 +559,7 @@ export async function applySessionAdjustment(
     date,
   }).lean<LeanSession | null>();
   if (!session) return null;
+  assertSessionMutable(session);
 
   let exercises: SessionExerciseWrite[] = (session.exercises ?? []).map(
     toWrite,
@@ -637,6 +653,7 @@ export async function resetSessionToPlan(
     userId: userObjId,
     date,
   }).lean<LeanSession | null>();
+  if (existing) assertSessionMutable(existing);
 
   const logged = new Map(
     (existing?.exercises ?? [])

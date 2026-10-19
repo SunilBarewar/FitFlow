@@ -23,6 +23,7 @@ import { ExerciseThumbnail } from "./exercise-thumbnail";
 export function ExerciseRow({
   exercise,
   index,
+  locked = false,
   isCurrent,
   expanded,
   onToggleExpanded,
@@ -32,6 +33,7 @@ export function ExerciseRow({
 }: {
   exercise: SessionExercise;
   index: number;
+  locked?: boolean;
   isCurrent: boolean;
   expanded: boolean;
   onToggleExpanded: () => void;
@@ -106,7 +108,11 @@ export function ExerciseRow({
           />
         </button>
 
-        <StatusControl status={exercise.status} onSetStatus={onSetStatus} />
+        <StatusControl
+          status={exercise.status}
+          locked={locked}
+          onSetStatus={onSetStatus}
+        />
       </div>
 
       <AnimatePresence initial={false}>
@@ -121,6 +127,7 @@ export function ExerciseRow({
           >
             <ExerciseDetail
               exercise={exercise}
+              locked={locked}
               onSetStatus={onSetStatus}
               onRemove={onRemove}
               onAskCoach={onAskCoach}
@@ -136,9 +143,11 @@ export function ExerciseRow({
  * detail panel where a deliberate tap is appropriate. */
 function StatusControl({
   status,
+  locked,
   onSetStatus,
 }: {
   status: ExerciseLogStatus;
+  locked?: boolean;
   onSetStatus: (status: ExerciseLogStatus) => void;
 }) {
   const isDone = status === "done";
@@ -146,8 +155,12 @@ function StatusControl({
   return (
     <motion.button
       type="button"
-      whileTap={{ scale: 0.92 }}
-      onClick={() => onSetStatus(isDone ? "pending" : "done")}
+      whileTap={locked ? undefined : { scale: 0.92 }}
+      onClick={() => {
+        if (locked) return;
+        onSetStatus(isDone ? "pending" : "done");
+      }}
+      disabled={locked}
       aria-pressed={isDone}
       aria-label={isDone ? "Mark as not done" : "Mark as done"}
       className={cn(
@@ -155,6 +168,7 @@ function StatusControl({
         isDone
           ? "border-mint-edge bg-mint-tint text-mint-ink"
           : "border-line bg-surface text-ink-subtle hover:border-ink hover:text-ink",
+        locked && "cursor-default opacity-70",
       )}
     >
       <Tick size={16} />
@@ -164,11 +178,13 @@ function StatusControl({
 
 function ExerciseDetail({
   exercise,
+  locked = false,
   onSetStatus,
   onRemove,
   onAskCoach,
 }: {
   exercise: SessionExercise;
+  locked?: boolean;
   onSetStatus: (status: ExerciseLogStatus, note?: string) => void;
   onRemove: () => void;
   onAskCoach: () => void;
@@ -243,10 +259,12 @@ function ExerciseDetail({
           <textarea
             id={`note-${exercise.id}`}
             value={noteDraft}
+            readOnly={locked}
             onChange={(event) => setNoteDraft(event.target.value)}
-            onBlur={() =>
-              onSetStatus(exercise.status, noteDraft.trim() || undefined)
-            }
+            onBlur={() => {
+              if (locked) return;
+              onSetStatus(exercise.status, noteDraft.trim() || undefined);
+            }}
             rows={2}
             placeholder="e.g. did 2 sets of 8 at 20 lb"
             className="mt-1.5 w-full resize-none rounded-2xl border border-line bg-surface px-3 py-2 text-[14px] outline-none transition-colors focus:border-accent-edge"
@@ -254,49 +272,55 @@ function ExerciseDetail({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() =>
-            onSetStatus(exercise.status === "skipped" ? "pending" : "skipped")
-          }
-          className={cn(
-            "flex h-10 items-center gap-1.5 rounded-full border px-4 text-[13px] font-semibold transition-colors",
-            exercise.status === "skipped"
-              ? "border-line-strong bg-sunken text-ink"
-              : "border-line bg-surface text-ink-soft hover:bg-sunken",
-          )}
-        >
-          <SkipMark size={14} />
-          {exercise.status === "skipped" ? "Skipped" : "Skip this one"}
-        </button>
-
-        {noteOpen ? null : (
+      {locked ? (
+        <p className="text-[12.5px] text-ink-subtle">
+          Today&apos;s session is complete — this log can&apos;t be changed.
+        </p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setNoteOpen(true)}
+            onClick={() =>
+              onSetStatus(exercise.status === "skipped" ? "pending" : "skipped")
+            }
+            className={cn(
+              "flex h-10 items-center gap-1.5 rounded-full border px-4 text-[13px] font-semibold transition-colors",
+              exercise.status === "skipped"
+                ? "border-line-strong bg-sunken text-ink"
+                : "border-line bg-surface text-ink-soft hover:bg-sunken",
+            )}
+          >
+            <SkipMark size={14} />
+            {exercise.status === "skipped" ? "Skipped" : "Skip this one"}
+          </button>
+
+          {noteOpen ? null : (
+            <button
+              type="button"
+              onClick={() => setNoteOpen(true)}
+              className="flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
+            >
+              <NoteMark size={14} /> Add a note
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onAskCoach}
             className="flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
           >
-            <NoteMark size={14} /> Add a note
+            <SwapMark size={14} /> Ask for a swap
           </button>
-        )}
 
-        <button
-          type="button"
-          onClick={onAskCoach}
-          className="flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
-        >
-          <SwapMark size={14} /> Ask for a swap
-        </button>
-
-        <button
-          type="button"
-          onClick={onRemove}
-          className="flex h-10 items-center rounded-full px-3 text-[13px] font-semibold text-ink-subtle transition-colors hover:text-danger"
-        >
-          Remove from today
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="flex h-10 items-center rounded-full px-3 text-[13px] font-semibold text-ink-subtle transition-colors hover:text-danger"
+          >
+            Remove from today
+          </button>
+        </div>
+      )}
     </div>
   );
 }

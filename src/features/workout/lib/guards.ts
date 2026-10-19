@@ -12,3 +12,13 @@ export async function requireUser(): Promise<string | null> {
 export function isUsableDate(date: unknown): date is string {
   return isDateKey(date) && isWithinServerDayWindow(date);
 }
+
+/** Thrown when today's session is already marked complete — logs are final. */
+export class SessionImmutableError extends Error {
+  constructor(
+    message = "Today's session is complete and can't be changed.",
+  ) {
+    super(message);
+    this.name = "SessionImmutableError";
+  }
+}
