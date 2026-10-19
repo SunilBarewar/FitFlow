@@ -5,6 +5,7 @@ import {
   Footprints,
   type LucideIcon,
   PersonStanding,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import {
@@ -14,14 +15,13 @@ import {
   sameIdSet,
 } from "@/features/chat/setup-options";
 import {
-  PresetOption,
-  SelectableChip,
-  SetupAccordion,
-  SetupCard,
-  SetupCardHeader,
-  SetupFooter,
-  SetupSectionLabel,
-} from "./setup-controls";
+  BlockAction,
+  BlockCard,
+  BlockHeader,
+  Disclosure,
+  OptionRow,
+  ToggleChip,
+} from "../ui/controls";
 
 /**
  * Display copy for the quick picks. Kept separate from MUSCLE_PRESETS:
@@ -30,30 +30,35 @@ import {
  */
 const PRESET_META: Record<
   string,
-  { title: string; description: string; icon: LucideIcon; surface: string }
+  {
+    title: string;
+    description: string;
+    icon: LucideIcon;
+    tone: "accent" | "mint" | "sky" | "violet";
+  }
 > = {
   full: {
     title: "Full body",
     description: "A bit of everything, spread across your sessions.",
     icon: PersonStanding,
-    surface: "bg-brand-green-light text-primary",
+    tone: "mint",
   },
   upper: {
     title: "Upper body",
     description: "Chest, back, shoulders and arms.",
     icon: BicepsFlexed,
-    surface: "bg-brand-coral-light text-accent",
+    tone: "accent",
   },
   lower: {
     title: "Lower body",
     description: "Glutes, quads, hamstrings and calves.",
     icon: Footprints,
-    surface: "bg-brand-sky-light text-info",
+    tone: "sky",
   },
 };
 
 export function MuscleFocusBlock({
-  blockId,
+  blockId: _blockId,
   resolved,
   initialSelected,
   onSubmit,
@@ -75,34 +80,20 @@ export function MuscleFocusBlock({
   const presetId =
     MUSCLE_PRESETS.find((preset) => sameIdSet(preset.muscles, active))?.id ??
     null;
-  // A restored/custom selection isn't explained by the presets above,
-  // so start with the accordion open to show exactly what was picked.
+  // A restored or custom selection isn't explained by the presets above,
+  // so open the drawer to show exactly what was picked.
   const startsCustom =
     (initialSelected?.length ?? 0) > 0 &&
     !MUSCLE_PRESETS.some((preset) =>
       sameIdSet(preset.muscles, initialSelected ?? []),
     );
 
-  function selectPreset(muscles: string[]) {
-    if (resolved) return;
-    setSelected(muscles);
-  }
-
-  function toggleMuscle(id: string) {
-    if (resolved) return;
-    setSelected((current) =>
-      current.includes(id)
-        ? current.filter((value) => value !== id)
-        : [...current, id],
-    );
-  }
-
   return (
-    <SetupCard>
-      <SetupCardHeader
+    <BlockCard>
+      <BlockHeader
         icon={BicepsFlexed}
         title="What do you want to train?"
-        subtitle="Pick a focus and we'll shape your sessions around it, balanced across the week."
+        subtitle="Pick a focus and we'll balance it across your week."
         status={
           resolved
             ? "Saved"
@@ -112,72 +103,83 @@ export function MuscleFocusBlock({
         }
       />
 
-      <SetupSectionLabel>Quick picks — choose one</SetupSectionLabel>
-      <div role="radiogroup" aria-label="What do you want to train?">
-        <div className="flex flex-col gap-2">
-          {MUSCLE_PRESETS.map((preset) => {
-            const meta = PRESET_META[preset.id];
-            const isSelected = presetId === preset.id;
-            if (!meta) return null;
-            return (
-              <PresetOption
-                key={preset.id}
-                name={`muscle-focus-${blockId}`}
-                title={meta.title}
-                description={meta.description}
-                icon={meta.icon}
-                iconSurface={meta.surface}
-                selected={isSelected}
-                dimmed={known && presetId !== null && !isSelected}
-                disabled={resolved}
-                onSelect={() => selectPreset(preset.muscles)}
-              />
-            );
-          })}
-        </div>
+      <div className="flex flex-col gap-2 px-4" role="radiogroup">
+        {MUSCLE_PRESETS.map((preset) => {
+          const meta = PRESET_META[preset.id];
+          if (!meta) return null;
+          const isSelected = presetId === preset.id;
+          return (
+            <OptionRow
+              key={preset.id}
+              role="radio"
+              title={meta.title}
+              description={meta.description}
+              icon={meta.icon}
+              tone={meta.tone}
+              selected={isSelected}
+              dimmed={known && presetId !== null && !isSelected}
+              disabled={resolved}
+              onSelect={() => {
+                if (resolved) return;
+                setSelected(preset.muscles);
+              }}
+            />
+          );
+        })}
       </div>
 
-      <SetupAccordion
-        label="Choose specific muscles"
-        summary={
-          active.length === 0
-            ? "Biceps, chest, glutes and more"
-            : `${active.length} of ${MUSCLES.length} selected`
-        }
-        defaultOpen={startsCustom}
-      >
-        <p className="mb-3 text-sm leading-snug text-muted-foreground">
-          Want something more targeted? Tap every muscle you&apos;d like to
-          include and we&apos;ll build around your list.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {MUSCLES.map((muscle) => {
-            const isSelected = active.includes(muscle.id);
-            return (
-              <SelectableChip
-                key={muscle.id}
-                label={muscle.label}
-                selected={isSelected}
-                dimmed={known && !isSelected}
-                disabled={resolved}
-                onClick={() => toggleMuscle(muscle.id)}
-              />
-            );
-          })}
-        </div>
-      </SetupAccordion>
+      <div className="p-4 pt-3">
+        <Disclosure
+          icon={SlidersHorizontal}
+          label="Choose specific muscles"
+          summary={
+            active.length === 0
+              ? "Biceps, chest, glutes and more"
+              : `${active.length} of ${MUSCLES.length} selected`
+          }
+          defaultOpen={startsCustom}
+        >
+          <p className="pb-3 text-[13px] leading-snug text-ink-muted">
+            Tap every muscle you&apos;d like to include and we&apos;ll build
+            around your list.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {MUSCLES.map((muscle) => {
+              const isSelected = active.includes(muscle.id);
+              return (
+                <ToggleChip
+                  key={muscle.id}
+                  label={muscle.label}
+                  selected={isSelected}
+                  dimmed={known && !isSelected}
+                  disabled={resolved}
+                  onToggle={() => {
+                    if (resolved) return;
+                    setSelected((current) =>
+                      current.includes(muscle.id)
+                        ? current.filter((value) => value !== muscle.id)
+                        : [...current, muscle.id],
+                    );
+                  }}
+                />
+              );
+            })}
+          </div>
+        </Disclosure>
+      </div>
 
       {resolved ? null : (
-        <SetupFooter
-          message={
+        <BlockAction
+          label="Continue"
+          hint={
             active.length === 0
-              ? "Choose a quick pick, or tap out your own list below."
+              ? "Choose a quick pick, or tap out your own list."
               : presetId !== null
-                ? "Good to go — this focus shapes your whole plan."
-                : `${active.length} of ${MUSCLES.length} muscles picked — we'll train exactly these.`
+                ? "This focus shapes your whole plan."
+                : `${active.length} of ${MUSCLES.length} muscles picked.`
           }
           disabled={active.length === 0}
-          onContinue={() => {
+          onClick={() => {
             if (sent.current || active.length === 0) return;
             sent.current = true;
             setSubmitted(active);
@@ -186,6 +188,6 @@ export function MuscleFocusBlock({
           }}
         />
       )}
-    </SetupCard>
+    </BlockCard>
   );
 }

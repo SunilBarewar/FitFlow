@@ -1,11 +1,11 @@
 "use client";
 
-import { cn } from "cn";
-import { Dumbbell, Flame, Sparkles, Sprout } from "lucide-react";
+import { Dumbbell, Flame, Sprout } from "lucide-react";
 import { motion } from "motion/react";
 import { EXPERIENCE_OPTIONS } from "@/features/chat/setup-options";
 import type { ChatBlock, ChatMessage } from "@/features/chat/types";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
+import { cn } from "@/lib/utils/cn";
 import {
   ChoiceChipsBlock,
   MultiSelectChipsBlock,
@@ -25,9 +25,11 @@ import {
   UrgentCareBlock,
 } from "./blocks/safety-blocks";
 import { ChatMarkdown } from "./chat-markdown";
+import { CoachMark } from "./coach-mark";
 
 type Conversation = ReturnType<typeof useChatConversation>;
 
+/** Blocks that need the full column rather than a bubble's width. */
 function isWideBlock(block: ChatBlock) {
   switch (block.type) {
     case "experience":
@@ -59,38 +61,36 @@ export function ChatMessageRow({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className={cn("flex gap-2.5", isUser && "flex-row-reverse")}
+      transition={{ duration: 0.26, ease: [0.2, 0.7, 0.2, 1] }}
+      className={cn("flex gap-3", isUser && "flex-row-reverse")}
     >
-      {!isUser ? (
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Sparkles size={13} aria-hidden />
-        </span>
-      ) : null}
+      {isUser ? null : (
+        /* Wide blocks reclaim the avatar gutter on phones — 44px matters
+           at 390px, and the mark is still there once there's room. */
+        <CoachMark className={cn("mt-0.5", wide && "hidden sm:flex")} />
+      )}
+
       <div
         className={cn(
-          "flex min-w-0 flex-col gap-2",
-          isUser
-            ? "max-w-[85%] items-end"
-            : wide
-              ? "w-full min-w-0"
-              : "max-w-[85%]",
+          "flex min-w-0 flex-col gap-2.5",
+          isUser ? "max-w-[85%] items-end" : wide ? "w-full" : "max-w-[88%]",
         )}
       >
         {message.text ? (
           <div
             className={cn(
-              "text-sm leading-relaxed",
+              "text-[15px] leading-relaxed",
               isUser
-                ? "rounded-2xl rounded-tr-sm bg-primary px-3.5 py-2.5 text-primary-foreground"
-                : cn("text-foreground", wide && "self-start"),
+                ? "rounded-[20px] rounded-tr-md bg-ink px-4 py-2.5 text-white"
+                : "text-ink-soft",
             )}
           >
             {isUser ? message.text : <ChatMarkdown content={message.text} />}
           </div>
         ) : null}
+
         {message.block ? (
           <BlockRenderer
             block={message.block}
@@ -148,8 +148,8 @@ function BlockRenderer({
           resolved={resolved}
           initialSelected={block.selected}
           onSubmit={(label) => conversation.selectChoice(block.id, label)}
-          onPersistSubmit={(sel) =>
-            conversation.persistBlockSelection(block.id, sel)
+          onPersistSubmit={(selection) =>
+            conversation.persistBlockSelection(block.id, selection)
           }
         />
       );
@@ -160,8 +160,8 @@ function BlockRenderer({
           resolved={resolved}
           initialSelected={block.selected}
           onSubmit={(label) => conversation.selectChoice(block.id, label)}
-          onPersistSubmit={(sel) =>
-            conversation.persistBlockSelection(block.id, sel)
+          onPersistSubmit={(selection) =>
+            conversation.persistBlockSelection(block.id, selection)
           }
         />
       );
@@ -173,8 +173,8 @@ function BlockRenderer({
           onSubmit={(ids, labels) =>
             conversation.selectMultiChoice(ids, labels)
           }
-          onPersistSubmit={(sel) =>
-            conversation.persistBlockSelection(block.id, sel)
+          onPersistSubmit={(selection) =>
+            conversation.persistBlockSelection(block.id, selection)
           }
         />
       );
@@ -234,26 +234,25 @@ function BlockRenderer({
   }
 }
 
+/** What the coach is doing right now, in its own words. */
 export function CoachActivityIndicator({ label }: { label: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="flex items-center gap-2.5"
+      className="flex items-center gap-3"
       role="status"
       aria-live="polite"
       aria-label={label}
     >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-        <Sparkles size={13} aria-hidden />
-      </span>
+      <CoachMark working />
       <motion.p
         key={label}
-        initial={{ opacity: 0.4 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 3 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="flex min-h-7 items-center text-sm leading-none text-muted-foreground"
+        className="text-[14px] text-ink-muted"
       >
         {label}
       </motion.p>

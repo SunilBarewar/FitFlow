@@ -1,11 +1,11 @@
 "use client";
 
-import { SendHorizonal } from "lucide-react";
 import { AnimatePresence } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "@/components/ui/fit-toaster";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
 import { ChatMessageRow, CoachActivityIndicator } from "./chat-message";
+import { Composer } from "./composer";
 import { EmptyState } from "./empty-state";
 
 export function ChatPanel({
@@ -22,7 +22,6 @@ export function ChatPanel({
     showCoachActivity,
     coachActivityLabel,
   } = conversation;
-  const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +51,7 @@ export function ChatPanel({
     return () => cancelAnimationFrame(frame);
   }, [scrollKey]);
 
+  // Follow a growing message only while the reader is already at the bottom.
   useEffect(() => {
     const scrollEl = scrollRef.current;
     const contentEl = contentRef.current;
@@ -68,14 +68,6 @@ export function ChatPanel({
     return () => observer.disconnect();
   }, []);
 
-  function handleSubmit(e: React.SubmitEvent) {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    setDraft("");
-    sendText(text);
-  }
-
   if (messages.length === 0) {
     return <EmptyState userName={userName} onSend={sendText} />;
   }
@@ -84,9 +76,12 @@ export function ChatPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain [overflow-anchor:none] px-4 py-5 sm:px-6"
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain [overflow-anchor:none] px-4 py-6 sm:px-6"
       >
-        <div ref={contentRef} className="mx-auto flex max-w-xl flex-col gap-4">
+        <div
+          ref={contentRef}
+          className="mx-auto flex max-w-2xl flex-col gap-5 pb-2"
+        >
           <AnimatePresence initial={false}>
             {messages.map((message, index) => (
               <ChatMessageRow
@@ -110,31 +105,11 @@ export function ChatPanel({
         </div>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="border-t border-border bg-card/80 px-4 py-3 backdrop-blur-sm sm:px-6"
-      >
-        <div className="mx-auto flex max-w-xl items-center gap-2">
-          <label htmlFor="coach-composer" className="sr-only">
-            Message your coach
-          </label>
-          <input
-            id="coach-composer"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask your coach anything…"
-            className="h-11 flex-1 rounded-pill border border-border bg-background px-4 text-sm outline-none transition-colors focus:border-primary"
-          />
-          <button
-            type="submit"
-            disabled={draft.trim().length === 0}
-            aria-label="Send message"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity disabled:opacity-40"
-          >
-            <SendHorizonal size={17} aria-hidden />
-          </button>
+      <div className="shrink-0 px-4 pt-1 pb-3 sm:px-6 sm:pb-4">
+        <div className="mx-auto max-w-2xl">
+          <Composer onSend={sendText} />
         </div>
-      </form>
+      </div>
     </div>
   );
 }

@@ -1,21 +1,21 @@
 "use client";
 
-import { cn } from "cn";
-import { Check } from "lucide-react";
 import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import type { ChatBlock } from "@/features/chat/types";
+import { cn } from "@/lib/utils/cn";
+import { Indicator, ToggleChip } from "../ui/controls";
 import { DescribedChoices } from "./described-choices";
 
 type ChoiceChipsBlock = Extract<ChatBlock, { type: "choice_chips" }>;
 type MultiSelectBlock = Extract<ChatBlock, { type: "multi_select_chips" }>;
 
-const chipStagger = {
+const stagger = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.05 } },
+  show: { transition: { staggerChildren: 0.04 } },
 };
 
-const chipItem = {
+const chipIn = {
   hidden: { opacity: 0, y: 6, scale: 0.96 },
   show: { opacity: 1, y: 0, scale: 1 },
 };
@@ -35,9 +35,9 @@ export function ChoiceChipsBlock({
     block.selected ?? null,
   );
   const sent = useRef(false);
-  const described = block.options.some((option) => option.description);
 
-  if (described) {
+  // Options that carry an explanation deserve rows, not chips.
+  if (block.options.some((option) => option.description)) {
     return (
       <DescribedChoices
         options={block.options}
@@ -51,19 +51,18 @@ export function ChoiceChipsBlock({
 
   return (
     <motion.div
-      variants={chipStagger}
+      variants={stagger}
       initial="hidden"
       animate="show"
-      className="flex flex-wrap gap-2 pt-1"
+      className="flex flex-wrap gap-2"
     >
       {block.options.map((option) => {
         const isAnswer = clickedId === option.id;
-        const isDimmed = resolved && !isAnswer;
         return (
           <motion.button
             key={option.id}
             type="button"
-            variants={chipItem}
+            variants={chipIn}
             whileTap={resolved ? undefined : { scale: 0.95 }}
             disabled={resolved}
             onClick={() => {
@@ -74,15 +73,15 @@ export function ChoiceChipsBlock({
               onPersistSubmit?.(option.id);
             }}
             className={cn(
-              "inline-flex h-10 items-center gap-1.5 rounded-pill border px-4 text-sm font-medium transition-colors",
+              "inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-[13px] font-semibold transition-colors",
               isAnswer
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-foreground hover:bg-muted",
-              isDimmed && "opacity-40",
+                ? "border-accent-edge/50 bg-accent-soft text-ink"
+                : "border-line bg-surface text-ink-soft hover:bg-sunken",
+              resolved && !isAnswer && "opacity-45",
               !resolved && "cursor-pointer",
             )}
           >
-            {isAnswer ? <Check size={14} aria-hidden /> : null}
+            {isAnswer ? <Indicator selected /> : null}
             {option.label}
           </motion.button>
         );
@@ -107,69 +106,60 @@ export function MultiSelectChipsBlock({
     resolved && block.selected ? block.selected : null,
   );
   const sent = useRef(false);
+  const active = submittedIds ?? selected;
 
   function toggle(id: string) {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
+    setSelected((current) =>
+      current.includes(id)
+        ? current.filter((value) => value !== id)
+        : [...current, id],
     );
   }
 
   return (
-    <div className="flex flex-col gap-3 pt-1">
+    <div className="flex flex-col gap-3">
       <motion.div
-        variants={chipStagger}
+        variants={stagger}
         initial="hidden"
         animate="show"
         className="flex flex-wrap gap-2"
       >
         {block.options.map((option) => {
-          const isSelected = resolved
-            ? (submittedIds ?? []).includes(option.id)
-            : selected.includes(option.id);
-          const isDimmed = resolved && !isSelected;
+          const isSelected = active.includes(option.id);
           return (
-            <motion.button
-              key={option.id}
-              type="button"
-              variants={chipItem}
-              whileTap={resolved ? undefined : { scale: 0.95 }}
-              disabled={resolved}
-              onClick={() => toggle(option.id)}
-              aria-pressed={isSelected}
-              className={cn(
-                "inline-flex h-10 items-center gap-1.5 rounded-pill border px-4 text-sm font-medium transition-colors",
-                isSelected
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:bg-muted",
-                isDimmed && "opacity-40",
-                !resolved && "cursor-pointer",
-              )}
-            >
-              {isSelected ? <Check size={14} aria-hidden /> : null}
-              {option.label}
-            </motion.button>
+            <motion.div key={option.id} variants={chipIn}>
+              <ToggleChip
+                label={option.label}
+                selected={isSelected}
+                dimmed={resolved && !isSelected}
+                disabled={resolved}
+                onToggle={() => toggle(option.id)}
+              />
+            </motion.div>
           );
         })}
       </motion.div>
-      {!resolved ? (
-        <button
+
+      {resolved ? null : (
+        <motion.button
           type="button"
           disabled={selected.length === 0}
+          whileTap={selected.length === 0 ? undefined : { scale: 0.97 }}
           onClick={() => {
             if (sent.current || selected.length === 0) return;
             sent.current = true;
             const labels = block.options
-              .filter((o) => selected.includes(o.id))
-              .map((o) => o.label);
+              .filter((option) => selected.includes(option.id))
+              .map((option) => option.label);
             setSubmittedIds(selected);
             onSubmit(selected, labels);
             onPersistSubmit?.(selected);
           }}
-          className="self-start rounded-pill bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-40"
+          className="h-10 self-start rounded-full bg-ink px-5 text-[13px] font-semibold text-white transition-colors hover:bg-ink-soft disabled:opacity-35"
         >
           Continue
-        </button>
-      ) : null}
+        </motion.button>
+      )}
     </div>
   );
 }

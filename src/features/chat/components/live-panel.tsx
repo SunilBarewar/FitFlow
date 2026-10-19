@@ -1,23 +1,13 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import {
-  Tabs,
-  TabsIndicator,
-  TabsList,
-  TabsPanel,
-  TabsTab,
-} from "@/components/ui/tabs";
 import type { PanelTab } from "@/features/chat/types";
 import type { useChatConversation } from "@/features/chat/use-chat-conversation";
 import { PlanTab } from "./panel/plan-tab";
 import { TodayCard } from "./panel/today-card";
+import { SegmentedSwitch } from "./ui/controls";
 
-const TABS: { id: PanelTab; label: string }[] = [
-  { id: "today", label: "Today" },
-  { id: "plan", label: "Plan" },
-];
-
+/* The workspace half: what you're doing today, and the week it sits in. */
 export function LivePanel({
   conversation,
 }: {
@@ -26,66 +16,44 @@ export function LivePanel({
   const { panel, setPanelTab, todayLog, setExerciseLog } = conversation;
 
   return (
-    <Tabs
-      value={panel.tab}
-      onValueChange={(v) => setPanelTab(v as PanelTab)}
-      className="flex h-full flex-col"
-    >
-      <div className="border-b border-border px-4 py-3 sm:px-5">
-        <TabsList>
-          <TabsIndicator />
-          {TABS.map((tab) => (
-            <TabsTab key={tab.id} value={tab.id} className="relative">
-              {tab.label}
-              <AnimatePresence>
-                {panel.highlightTab === tab.id ? (
-                  <motion.span
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="absolute -top-0.5 -right-1 h-2 w-2 rounded-full bg-accent"
-                  />
-                ) : null}
-              </AnimatePresence>
-            </TabsTab>
-          ))}
-        </TabsList>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-4 pb-3">
+        <SegmentedSwitch<PanelTab>
+          layoutId="live-panel-tab"
+          value={panel.tab}
+          onChange={setPanelTab}
+          options={[
+            {
+              id: "today",
+              label: "Today",
+              badge: panel.highlightTab === "today",
+            },
+            { id: "plan", label: "Plan", badge: panel.highlightTab === "plan" },
+          ]}
+        />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-        <TabsPanel value="today">
-          <AnimatedPanelContent active={panel.tab === "today"}>
-            <TodayCard
-              today={panel.today}
-              log={todayLog}
-              onSetExerciseLog={setExerciseLog}
-            />
-          </AnimatedPanelContent>
-        </TabsPanel>
-        <TabsPanel value="plan">
-          <AnimatedPanelContent active={panel.tab === "plan"}>
-            <PlanTab plan={panel.plan} todayLog={todayLog} />
-          </AnimatedPanelContent>
-        </TabsPanel>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-6">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={panel.tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            {panel.tab === "today" ? (
+              <TodayCard
+                today={panel.today}
+                log={todayLog}
+                onSetExerciseLog={setExerciseLog}
+              />
+            ) : (
+              <PlanTab plan={panel.plan} todayLog={todayLog} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
-    </Tabs>
-  );
-}
-
-function AnimatedPanelContent({
-  active,
-  children,
-}: {
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.div
-      initial={false}
-      animate={active ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
+    </div>
   );
 }

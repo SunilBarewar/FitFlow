@@ -1,6 +1,6 @@
 "use client";
 
-import { Dumbbell, House, Warehouse } from "lucide-react";
+import { Dumbbell, House, SlidersHorizontal, Warehouse } from "lucide-react";
 import { useRef, useState } from "react";
 import {
   EQUIPMENT,
@@ -10,14 +10,13 @@ import {
   sameIdSet,
 } from "@/features/chat/setup-options";
 import {
-  PresetOption,
-  SelectableChip,
-  SetupAccordion,
-  SetupCard,
-  SetupCardHeader,
-  SetupFooter,
-  SetupSectionLabel,
-} from "./setup-controls";
+  BlockAction,
+  BlockCard,
+  BlockHeader,
+  Disclosure,
+  OptionRow,
+  ToggleChip,
+} from "../ui/controls";
 
 const PRESETS = [
   {
@@ -26,7 +25,7 @@ const PRESETS = [
     description: "Machines, cables, barbells — the full range of kit.",
     equipment: GYM_EQUIPMENT,
     icon: Warehouse,
-    surface: "bg-brand-green-light text-primary",
+    tone: "mint",
   },
   {
     id: "home",
@@ -34,12 +33,12 @@ const PRESETS = [
     description: "Bodyweight only. Nothing to buy, nothing to set up.",
     equipment: HOME_EQUIPMENT,
     icon: House,
-    surface: "bg-brand-sky-light text-brand-sky",
+    tone: "sky",
   },
 ] as const;
 
 export function EquipmentBlock({
-  blockId,
+  blockId: _blockId,
   resolved,
   initialSelected,
   onSubmit,
@@ -61,34 +60,18 @@ export function EquipmentBlock({
   const matchesPreset = PRESETS.some((preset) =>
     sameIdSet(active, preset.equipment),
   );
-  // A restored/custom selection isn't explained by the presets above,
-  // so start with the accordion open to show exactly what was picked.
   const startsCustom =
     (initialSelected?.length ?? 0) > 0 &&
     !PRESETS.some((preset) =>
       sameIdSet(initialSelected ?? [], preset.equipment),
     );
 
-  function selectPreset(equipment: readonly string[]) {
-    if (resolved) return;
-    setSelected([...equipment]);
-  }
-
-  function toggleItem(id: string) {
-    if (resolved) return;
-    setSelected((current) =>
-      current.includes(id)
-        ? current.filter((value) => value !== id)
-        : [...current, id],
-    );
-  }
-
   return (
-    <SetupCard>
-      <SetupCardHeader
+    <BlockCard>
+      <BlockHeader
         icon={Dumbbell}
         title="Where will you train?"
-        subtitle="We'll only suggest exercises you can actually do with what's around you."
+        subtitle="We'll only suggest exercises you can actually do."
         status={
           resolved
             ? "Saved"
@@ -98,70 +81,80 @@ export function EquipmentBlock({
         }
       />
 
-      <SetupSectionLabel>Quick picks — choose one</SetupSectionLabel>
-      <div role="radiogroup" aria-label="Where will you work out?">
-        <div className="flex flex-col gap-2">
-          {PRESETS.map((preset) => {
-            const isSelected = sameIdSet(active, preset.equipment);
-            return (
-              <PresetOption
-                key={preset.id}
-                name={`equipment-${blockId}`}
-                title={preset.label}
-                description={preset.description}
-                icon={preset.icon}
-                iconSurface={preset.surface}
-                selected={isSelected}
-                dimmed={known && matchesPreset && !isSelected}
-                disabled={resolved}
-                onSelect={() => selectPreset(preset.equipment)}
-              />
-            );
-          })}
-        </div>
+      <div className="flex flex-col gap-2 px-4" role="radiogroup">
+        {PRESETS.map((preset) => {
+          const isSelected = sameIdSet(active, preset.equipment);
+          return (
+            <OptionRow
+              key={preset.id}
+              role="radio"
+              title={preset.label}
+              description={preset.description}
+              icon={preset.icon}
+              tone={preset.tone}
+              selected={isSelected}
+              dimmed={known && matchesPreset && !isSelected}
+              disabled={resolved}
+              onSelect={() => {
+                if (resolved) return;
+                setSelected([...preset.equipment]);
+              }}
+            />
+          );
+        })}
       </div>
 
-      <SetupAccordion
-        label="Choose specific equipment"
-        summary={
-          active.length === 0
-            ? "Bands, cables, machines and more"
-            : `${active.length} of ${EQUIPMENT.length} selected`
-        }
-        defaultOpen={startsCustom}
-      >
-        <p className="mb-3 text-sm leading-snug text-muted-foreground">
-          Train somewhere in between? Tap everything you can use and we&apos;ll
-          build your sessions around exactly that.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {EQUIPMENT.map((item) => {
-            const isSelected = active.includes(item.id);
-            return (
-              <SelectableChip
-                key={item.id}
-                label={item.label}
-                selected={isSelected}
-                dimmed={known && !isSelected}
-                disabled={resolved}
-                onClick={() => toggleItem(item.id)}
-              />
-            );
-          })}
-        </div>
-      </SetupAccordion>
+      <div className="p-4 pt-3">
+        <Disclosure
+          icon={SlidersHorizontal}
+          label="Choose specific equipment"
+          summary={
+            active.length === 0
+              ? "Bands, cables, machines and more"
+              : `${active.length} of ${EQUIPMENT.length} selected`
+          }
+          defaultOpen={startsCustom}
+        >
+          <p className="pb-3 text-[13px] leading-snug text-ink-muted">
+            Train somewhere in between? Tap everything you can use.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {EQUIPMENT.map((item) => {
+              const isSelected = active.includes(item.id);
+              return (
+                <ToggleChip
+                  key={item.id}
+                  label={item.label}
+                  selected={isSelected}
+                  dimmed={known && !isSelected}
+                  disabled={resolved}
+                  onToggle={() => {
+                    if (resolved) return;
+                    setSelected((current) =>
+                      current.includes(item.id)
+                        ? current.filter((value) => value !== item.id)
+                        : [...current, item.id],
+                    );
+                  }}
+                />
+              );
+            })}
+          </div>
+        </Disclosure>
+      </div>
 
       {resolved ? null : (
-        <SetupFooter
-          message={
+        <BlockAction
+          label="Continue"
+          hint={
             active.length === 0
-              ? "Choose a quick pick, or tap out your own kit list below."
+              ? "Choose a quick pick, or tap out your own kit list."
               : matchesPreset
-                ? "Good to go — this sets every exercise in your plan."
-                : `${active.length} of ${EQUIPMENT.length} items picked — we'll only use these.`
+                ? "This sets every exercise in your plan."
+                : `${active.length} of ${EQUIPMENT.length} items picked.`
           }
           disabled={active.length === 0}
-          onContinue={() => {
+          onClick={() => {
             if (sent.current || active.length === 0) return;
             sent.current = true;
             setSubmitted(active);
@@ -170,6 +163,6 @@ export function EquipmentBlock({
           }}
         />
       )}
-    </SetupCard>
+    </BlockCard>
   );
 }

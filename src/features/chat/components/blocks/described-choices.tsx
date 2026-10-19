@@ -1,14 +1,16 @@
 "use client";
 
-import { cn } from "cn";
-import { Check, ChevronRight, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import type { SetupOption } from "@/features/chat/setup-options";
+import { OptionRow } from "../ui/controls";
 
-type Choice = Pick<SetupOption, "id" | "label"> & {
-  description?: string;
-};
+type Choice = Pick<SetupOption, "id" | "label"> & { description?: string };
 
+const TONES = ["accent", "mint", "sky", "violet"] as const;
+
+/** A short list of answers, each with a line explaining it. One tap sends. */
 export function DescribedChoices({
   options,
   icons,
@@ -33,59 +35,32 @@ export function DescribedChoices({
   return (
     <fieldset className="flex w-full flex-col gap-2 border-0 p-0">
       <legend className="sr-only">Choose one</legend>
-      {options.map((option) => {
-        const Icon = icons?.[option.id];
-        const isAnswer = clickedId === option.id;
-        const isDimmed = known && resolved && !isAnswer;
-        return (
-          <button
-            key={option.id}
-            type="button"
+      {options.map((option, index) => (
+        <motion.div
+          key={option.id}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: index * 0.05, ease: "easeOut" }}
+        >
+          <OptionRow
+            role="radio"
+            title={option.label}
+            description={option.description}
+            icon={icons?.[option.id]}
+            tone={TONES[index % TONES.length]}
+            selected={clickedId === option.id}
+            dimmed={known && resolved && clickedId !== option.id}
             disabled={resolved || known}
-            onClick={() => {
+            onSelect={() => {
               if (sent.current || resolved) return;
               sent.current = true;
               setClickedId(option.id);
               onSelect(option.id, option.label);
               onPersistSubmit?.(option.id);
             }}
-            className={cn(
-              "flex min-h-11 w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors duration-150",
-              "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-              isAnswer
-                ? "border-primary bg-brand-green-light/70"
-                : "border-border bg-card hover:bg-muted active:bg-muted",
-              isDimmed && "opacity-40",
-              resolved ? "cursor-default" : "cursor-pointer",
-            )}
-          >
-            {Icon ? (
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-green-light text-primary">
-                <Icon size={18} aria-hidden />
-              </span>
-            ) : null}
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold leading-snug text-foreground">
-                {option.label}
-              </span>
-              {option.description ? (
-                <span className="mt-0.5 block text-sm leading-snug text-muted-foreground">
-                  {option.description}
-                </span>
-              ) : null}
-            </span>
-            {isAnswer ? (
-              <Check size={18} aria-hidden className="shrink-0 text-primary" />
-            ) : (
-              <ChevronRight
-                size={18}
-                aria-hidden
-                className="shrink-0 text-muted-foreground"
-              />
-            )}
-          </button>
-        );
-      })}
+          />
+        </motion.div>
+      ))}
     </fieldset>
   );
 }

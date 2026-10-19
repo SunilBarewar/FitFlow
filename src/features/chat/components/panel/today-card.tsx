@@ -1,18 +1,16 @@
 "use client";
 
-import { cn } from "cn";
 import {
-  CalendarClock,
   Check,
   ChevronLeft,
   ChevronRight,
   Dumbbell,
-  InfoIcon,
   Moon,
   NotebookPen,
   Play,
   SkipForward,
   Sparkles,
+  Sunrise,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
@@ -24,6 +22,7 @@ import type {
   TodayWorkout,
 } from "@/features/chat/types";
 import { exerciseImageUrl } from "@/lib/exercises/image-url";
+import { cn } from "@/lib/utils/cn";
 
 type ExerciseState = { status: ExerciseLogStatus; note?: string };
 
@@ -82,8 +81,7 @@ export function TodayCard({
   const percent = total === 0 ? 0 : Math.round((doneCount / total) * 100);
   const isRestDay = total === 0;
 
-  // Borrowed from the phone mockup: the queue reads at a glance because only
-  // one exercise is "now". Everything else is done, up next, or waiting.
+  // Only one exercise is ever "now" — everything else is done, next, or waiting.
   const currentExercise = today?.exercises.find(
     (exercise) => states.get(exercise.id)?.status === "pending",
   );
@@ -100,21 +98,16 @@ export function TodayCard({
 
   if (!today) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-border px-4 py-10 text-center"
-      >
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-green-light text-primary">
-          <CalendarClock size={20} aria-hidden />
+      <div className="flex flex-col items-center gap-2 rounded-[22px] border border-dashed border-line-strong px-5 py-12 text-center">
+        <span className="flex size-10 items-center justify-center rounded-full bg-accent-soft text-accent-edge">
+          <Sunrise size={18} aria-hidden />
         </span>
-        <p className="text-sm font-medium">Ready for today?</p>
-        <p className="max-w-60 text-xs leading-relaxed text-muted-foreground">
-          Tell your coach in chat what you&apos;re going for and today&apos;s
-          session will show up here.
+        <p className="pt-1 text-[15px] font-semibold">Nothing planned yet</p>
+        <p className="max-w-56 text-[13px] leading-relaxed text-ink-muted">
+          Tell your coach what you&apos;re after and today&apos;s session shows
+          up here.
         </p>
-      </motion.div>
+      </div>
     );
   }
 
@@ -140,7 +133,7 @@ export function TodayCard({
           initial={{ opacity: 0, x: reduceMotion ? 0 : 16 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: reduceMotion ? 0 : 12 }}
-          transition={{ duration: 0.18, ease: "easeOut" }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
         >
           <ExerciseDetailView
             exercise={selectedExercise}
@@ -157,28 +150,35 @@ export function TodayCard({
           initial={{ opacity: 0, x: reduceMotion ? 0 : -12 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: reduceMotion ? 0 : -8 }}
-          transition={{ duration: 0.18, ease: "easeOut" }}
-          className="space-y-5"
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="flex flex-col gap-4"
         >
-          {today.adjusted ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="flex items-start gap-2 overflow-hidden rounded-xl border border-info/30 bg-info/10 px-3 py-2 text-xs text-foreground"
-            >
-              <Sparkles
-                size={13}
-                className="mt-0.5 shrink-0 text-info"
-                aria-hidden
-              />
-              <span>
-                Adjusted for today: {today.adjusted.reason} —{" "}
-                {today.adjusted.fromEquipment} → {today.adjusted.toEquipment}
-              </span>
-            </motion.div>
-          ) : null}
+          <AnimatePresence initial={false}>
+            {today.adjusted ? (
+              <motion.div
+                key="adjusted"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <p className="flex items-start gap-2 rounded-2xl border border-sky-edge bg-sky-tint px-3 py-2.5 text-[12px] leading-snug text-ink-soft">
+                  <Sparkles
+                    size={13}
+                    className="mt-0.5 shrink-0 text-sky-ink"
+                    aria-hidden
+                  />
+                  <span>
+                    Adjusted for today: {today.adjusted.reason} —{" "}
+                    {today.adjusted.fromEquipment} →{" "}
+                    {today.adjusted.toEquipment}
+                  </span>
+                </p>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
-          <TodaySessionHero
+          <SessionHeader
             today={today}
             isRestDay={isRestDay}
             isComplete={isComplete}
@@ -192,17 +192,10 @@ export function TodayCard({
                 : undefined
             }
           />
+
           {isRestDay ? null : (
             <>
-              <SectionDivider
-                label={
-                  isComplete
-                    ? "Today's exercises · all checked off"
-                    : "Today's exercises"
-                }
-              />
-
-              <ul className="space-y-2">
+              <ul className="flex flex-col gap-2">
                 {today.exercises.map((exercise, index) => (
                   <ExerciseRow
                     key={exercise.id}
@@ -217,21 +210,9 @@ export function TodayCard({
                 ))}
               </ul>
 
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.p
-                  key="hint"
-                  exit={{ opacity: 0 }}
-                  className="text-xs leading-relaxed text-muted-foreground flex items-center gap-2"
-                >
-                  <InfoIcon
-                    size={14}
-                    className="shrink-0 text-muted-foreground"
-                    aria-hidden
-                  />
-                  Tap on the exercise to see how to do it, then mark it as done
-                  or skipped.
-                </motion.p>
-              </AnimatePresence>
+              <p className="text-[12px] leading-relaxed text-ink-subtle">
+                Tap an exercise to see how it&apos;s done, then mark it off.
+              </p>
             </>
           )}
         </motion.div>
@@ -240,7 +221,8 @@ export function TodayCard({
   );
 }
 
-function TodaySessionHero({
+/** The one card that answers "what am I doing right now?". */
+function SessionHeader({
   today,
   isRestDay,
   isComplete,
@@ -259,22 +241,23 @@ function TodaySessionHero({
   currentExercise?: Exercise;
   onOpenCurrent?: () => void;
 }) {
+  const left = total - doneCount;
   const statusLine = isRestDay
-    ? "No exercises planned today — take the time to recover."
+    ? "Nothing planned — recovery counts as training."
     : isComplete
-      ? `${total} of ${total} exercises checked off`
+      ? `All ${total} exercises done. Nice work.`
       : doneCount === 0
-        ? `${today.minutes} min · ${total} exercises · ready when you are`
-        : `${today.minutes} min · ${total - doneCount} exercise${total - doneCount === 1 ? "" : "s"} left`;
+        ? `${today.minutes} min · ${total} exercises`
+        : `${left} exercise${left === 1 ? "" : "s"} left · ${today.minutes} min`;
 
   return (
-    <div className="rounded-3xl bg-primary p-5 text-primary-foreground">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-wide text-primary-foreground/70 uppercase">
-            {isRestDay ? "Rest day" : `Today's session · ${today.dayLabel}`}
+    <div className="overflow-hidden rounded-[22px] border border-line bg-surface shadow-card">
+      <div className="flex items-start gap-3 p-4">
+        <div className="min-w-0 flex-1">
+          <p className="font-brand-mono text-[11px] tracking-wide text-ink-subtle uppercase">
+            {isRestDay ? "Rest day" : `Today · ${today.dayLabel}`}
           </p>
-          <p className="mt-1 text-xl font-bold">
+          <p className="pt-1 text-[20px] leading-tight font-medium tracking-[-0.025em]">
             {isRestDay ? "Recovery" : today.focus}
           </p>
           <AnimatePresence mode="wait" initial={false}>
@@ -283,8 +266,8 @@ function TodaySessionHero({
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
-              className="mt-1.5 text-sm text-primary-foreground/80"
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="pt-1 text-[13px] text-ink-muted"
             >
               {statusLine}
             </motion.p>
@@ -292,61 +275,43 @@ function TodaySessionHero({
         </div>
 
         {isRestDay ? (
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sky-tint text-sky-ink">
             <Moon size={18} aria-hidden />
           </span>
         ) : (
-          <ProgressRing percent={percent} isComplete={isComplete} />
+          <ProgressRing
+            percent={percent}
+            doneCount={doneCount}
+            total={total}
+            isComplete={isComplete}
+          />
         )}
       </div>
 
-      {isRestDay ? null : (
-        <div
-          className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-primary-foreground/20"
-          role="progressbar"
-          aria-valuenow={percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`${percent}% of today's exercises done`}
-        >
-          <motion.div
-            className="h-full rounded-full bg-primary-foreground"
-            initial={false}
-            animate={{ width: `${percent}%` }}
-            transition={{ type: "spring", stiffness: 120, damping: 22 }}
-          />
-        </div>
-      )}
-
-      {/* The mockup's play button, made real: it opens the exercise you're on. */}
       {currentExercise && onOpenCurrent ? (
         <motion.button
           type="button"
           onClick={onOpenCurrent}
-          whileTap={{ scale: 0.98 }}
-          className="mt-4 flex min-h-[44px] w-full items-center gap-3 rounded-xl bg-primary-foreground/15 px-3 py-2.5 text-left transition-colors hover:bg-primary-foreground/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+          whileTap={{ scale: 0.99 }}
+          className="flex w-full items-center gap-3 border-t border-line bg-accent-soft/30 px-4 py-3 text-left transition-colors hover:bg-accent-soft/50"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-foreground text-primary">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-white">
             {doneCount === 0 ? (
-              <Play size={14} className="ml-0.5 fill-current" aria-hidden />
+              <Play size={13} className="ml-0.5 fill-current" aria-hidden />
             ) : (
-              <Dumbbell size={15} aria-hidden />
+              <Dumbbell size={14} aria-hidden />
             )}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-semibold tracking-wider text-primary-foreground/70 uppercase">
+            <span className="block font-brand-mono text-[10px] tracking-wider text-ink-subtle uppercase">
               {doneCount === 0 ? "Start with" : "You're on"}
             </span>
-            <span className="block truncate text-sm font-semibold">
+            <span className="block truncate text-[14px] font-semibold">
               {currentExercise.name} · {currentExercise.sets} ×{" "}
               {currentExercise.reps}
             </span>
           </span>
-          <ChevronRight
-            size={16}
-            className="shrink-0 text-primary-foreground/70"
-            aria-hidden
-          />
+          <ChevronRight size={16} className="shrink-0 text-ink-subtle" />
         </motion.button>
       ) : null}
     </div>
@@ -355,28 +320,42 @@ function TodaySessionHero({
 
 function ProgressRing({
   percent,
+  doneCount,
+  total,
   isComplete,
 }: {
   percent: number;
+  doneCount: number;
+  total: number;
   isComplete: boolean;
 }) {
   const radius = 20;
   const circumference = 2 * Math.PI * radius;
+
   return (
     <div
-      className="relative h-12 w-12 shrink-0"
+      className="relative size-12 shrink-0"
       role="img"
-      aria-label={isComplete ? "All exercises done" : `${percent}% done`}
+      aria-label={
+        isComplete
+          ? "All exercises done"
+          : `${doneCount} of ${total} exercises done`
+      }
     >
-      <svg viewBox="0 0 48 48" className="h-12 w-12 -rotate-90" aria-hidden>
-        <title>{percent}% done</title>
+      {/* No <title> here: React 19 hoists it to the document head, which
+          breaks hydration. The wrapper's role + aria-label name this. */}
+      <svg
+        viewBox="0 0 48 48"
+        className="size-12 -rotate-90"
+        aria-hidden="true"
+      >
         <circle
           cx="24"
           cy="24"
           r={radius}
           fill="none"
           strokeWidth="4"
-          className="stroke-primary-foreground/25"
+          className="stroke-line"
         />
         <motion.circle
           cx="24"
@@ -386,7 +365,7 @@ function ProgressRing({
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={circumference}
-          className="stroke-primary-foreground"
+          className="stroke-accent-edge"
           initial={false}
           animate={{
             strokeDashoffset: circumference - (circumference * percent) / 100,
@@ -400,24 +379,16 @@ function ProgressRing({
             initial={{ scale: 0.4 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 380, damping: 16 }}
+            className="text-accent-edge"
           >
             <Check size={16} strokeWidth={3} aria-hidden />
           </motion.span>
         ) : (
-          <span className="text-[11px] font-bold">{percent}%</span>
+          <span className="font-brand-mono text-[11px] text-ink-soft">
+            {doneCount}/{total}
+          </span>
         )}
       </span>
-    </div>
-  );
-}
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <p className="shrink-0 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {label}
-      </p>
-      <div className="h-px flex-1 bg-border" />
     </div>
   );
 }
@@ -429,7 +400,7 @@ function StatusBadge({ variant }: { variant: RowVariant }) {
         initial={{ scale: 0.4, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 480, damping: 18 }}
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
+        className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mint-tint text-mint-ink"
         aria-label="Done"
       >
         <Check size={12} strokeWidth={3} aria-hidden />
@@ -438,21 +409,21 @@ function StatusBadge({ variant }: { variant: RowVariant }) {
   }
   if (variant === "skipped") {
     return (
-      <span className="shrink-0 rounded-pill bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground">
+      <span className="shrink-0 rounded-full bg-sunken px-2 py-1 text-[10px] font-semibold text-ink-subtle">
         Skipped
       </span>
     );
   }
   if (variant === "current") {
     return (
-      <span className="shrink-0 rounded-pill bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground">
+      <span className="shrink-0 rounded-full bg-ink px-2 py-1 text-[10px] font-bold tracking-wide text-white">
         NOW
       </span>
     );
   }
   if (variant === "next") {
     return (
-      <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
+      <span className="shrink-0 text-[10px] font-semibold text-ink-subtle">
         Up next
       </span>
     );
@@ -484,44 +455,44 @@ function ExerciseRow({
   return (
     <motion.li
       layout={!reduceMotion}
-      initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
+      initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.22,
-        delay: reduceMotion ? 0 : Math.min(index * 0.05, 0.25),
+        delay: reduceMotion ? 0 : Math.min(index * 0.04, 0.2),
         ease: "easeOut",
         layout: { type: "spring", stiffness: 320, damping: 30 },
       }}
       className={cn(
-        "rounded-xl border p-3 cursor-pointer",
+        "overflow-hidden rounded-2xl border transition-colors",
         isCurrent
-          ? "border-primary/40 bg-brand-green-light/50"
-          : "border-border bg-card",
+          ? "border-accent-edge/45 bg-accent-soft/25"
+          : "border-line bg-surface",
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 p-2.5">
         <button
           type="button"
           onClick={onOpen}
           aria-label={`${exercise.name} — view how to do it`}
-          className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-xl text-left"
         >
           <ExerciseThumbnail exercise={exercise} dimmed={isDone} />
           <span className="min-w-0">
             <span
               className={cn(
-                "block truncate text-sm font-semibold",
-                isDone && "text-muted-foreground",
-                variant === "skipped" && "text-muted-foreground line-through",
+                "block truncate text-[14px] font-semibold",
+                isDone && "text-ink-subtle",
+                variant === "skipped" && "text-ink-subtle line-through",
               )}
             >
               {exercise.name}
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
+            <span className="block truncate text-[12px] text-ink-muted">
               {exercise.sets} × {exercise.reps} · {exercise.equipment}
             </span>
             {state.note ? (
-              <span className="block truncate text-xs text-primary">
+              <span className="block truncate text-[12px] text-accent-edge">
                 “{state.note}”
               </span>
             ) : null}
@@ -542,12 +513,12 @@ function ExerciseRow({
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="flex gap-2 pt-3">
+            <div className="flex gap-2 px-2.5 pb-2.5">
               <motion.button
                 type="button"
                 onClick={onQuickDone}
                 whileTap={{ scale: 0.97 }}
-                className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-pill bg-primary text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-ink text-[12px] font-semibold text-white transition-colors hover:bg-ink-soft"
               >
                 <Check size={13} strokeWidth={3} aria-hidden />
                 Mark done
@@ -556,7 +527,7 @@ function ExerciseRow({
                 type="button"
                 onClick={onQuickSkip}
                 whileTap={{ scale: 0.97 }}
-                className="flex h-10 items-center justify-center gap-1.5 rounded-pill border border-border bg-card px-4 text-xs font-semibold transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="flex h-10 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[12px] font-semibold text-ink-soft transition-colors hover:bg-sunken"
               >
                 <SkipForward size={13} aria-hidden />
                 Skip
@@ -588,38 +559,32 @@ function ExerciseDetailView({
     onSetStatus(resolved, noteDraft.trim() || undefined);
   }
 
-  function saveNote() {
-    onSetStatus(state.status, noteDraft.trim() || undefined);
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex min-h-[44px] items-center gap-1 rounded-lg text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="inline-flex min-h-10 items-center gap-1 self-start text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
       >
         <ChevronLeft size={16} aria-hidden /> All exercises
       </button>
 
       <div className="flex items-center gap-3">
-        <ExerciseThumbnail exercise={exercise} size={56} />
+        <ExerciseThumbnail exercise={exercise} size={52} />
         <div className="min-w-0">
           <p
             className={cn(
-              "text-base font-semibold",
-              state.status === "skipped" &&
-                "text-muted-foreground line-through",
+              "text-[17px] leading-tight font-medium tracking-[-0.02em]",
+              state.status === "skipped" && "text-ink-subtle line-through",
             )}
           >
             {exercise.name}
           </p>
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-            <span>
-              {exercise.sets} × {exercise.reps} · {exercise.equipment}
-            </span>
+          <p className="pt-1 text-[12px] text-ink-muted">
+            {exercise.sets} × {exercise.reps} · {exercise.equipment}
             {state.status !== "pending" ? (
-              <span className="font-semibold text-primary capitalize">
+              <span className="font-semibold text-accent-edge capitalize">
+                {" "}
                 · {state.status}
               </span>
             ) : null}
@@ -637,7 +602,7 @@ function ExerciseDetailView({
           {exercise.images.slice(0, 2).map((image, index) => (
             <div
               key={image}
-              className="relative h-36 flex-1 overflow-hidden rounded-lg bg-muted"
+              className="relative h-36 flex-1 overflow-hidden rounded-2xl border border-line bg-sunken"
             >
               <Image
                 src={exerciseImageUrl(image)}
@@ -651,45 +616,44 @@ function ExerciseDetailView({
         </motion.div>
       ) : null}
 
-      {/* Set breakdown, echoing the mockup's set chips. When the exercise is
-          done the chips fill in — the closest honest read of "sets logged"
-          with per-exercise (not per-set) logging. */}
+      {/* Per-exercise logging, shown honestly: the chips fill in together
+          when the exercise is marked done. */}
       <div>
-        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        <p className="font-brand-mono text-[11px] tracking-wide text-ink-subtle uppercase">
           Sets
         </p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {Array.from({ length: exercise.sets }, (_, i) => (
+        <div className="flex flex-wrap gap-1.5 pt-2">
+          {Array.from({ length: exercise.sets }, (_, index) => (
             <motion.span
               // biome-ignore lint/suspicious/noArrayIndexKey: chips are positional by definition — set 1, set 2…
-              key={i}
+              key={index}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.15 }}
+              transition={{ delay: index * 0.04, duration: 0.15 }}
               className={cn(
-                "flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold",
+                "flex h-8 items-center gap-1 rounded-xl px-2.5 font-brand-mono text-[12px]",
                 state.status === "done"
-                  ? "bg-primary/15 text-primary"
-                  : "bg-muted text-muted-foreground",
+                  ? "bg-accent-soft text-ink"
+                  : "bg-sunken text-ink-muted",
               )}
             >
               {state.status === "done" ? (
                 <Check size={10} strokeWidth={3} aria-hidden />
               ) : null}
-              Set {i + 1} · {exercise.reps}
+              {index + 1} · {exercise.reps}
             </motion.span>
           ))}
         </div>
       </div>
 
       {exercise.instructions?.length ? (
-        <ol className="list-decimal space-y-1.5 pl-4 text-sm leading-relaxed text-muted-foreground">
+        <ol className="list-decimal space-y-1.5 pl-4 text-[13px] leading-relaxed text-ink-muted">
           {exercise.instructions.map((step, index) => (
             <li key={`${exercise.id}-step-${index}`}>{step}</li>
           ))}
         </ol>
       ) : (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[13px] text-ink-muted">
           No step-by-step instructions on file for this one — ask your coach for
           form cues.
         </p>
@@ -701,10 +665,10 @@ function ExerciseDetailView({
           onClick={() => toggleStatus("skipped")}
           whileTap={{ scale: 0.97 }}
           className={cn(
-            "flex h-11 flex-1 items-center justify-center gap-1.5 rounded-pill border text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+            "flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full border text-[13px] font-semibold transition-colors",
             state.status === "skipped"
-              ? "border-foreground/60 bg-muted text-foreground"
-              : "border-border bg-background hover:bg-muted",
+              ? "border-line-strong bg-sunken text-ink"
+              : "border-line bg-surface text-ink-soft hover:bg-sunken",
           )}
         >
           <SkipForward size={14} aria-hidden />
@@ -715,10 +679,10 @@ function ExerciseDetailView({
           onClick={() => toggleStatus("done")}
           whileTap={{ scale: 0.97 }}
           className={cn(
-            "flex h-11 flex-1 items-center justify-center gap-1.5 rounded-pill text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+            "flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold transition-colors",
             state.status === "done"
-              ? "bg-brand-green-light text-primary"
-              : "bg-primary text-primary-foreground hover:bg-primary/90",
+              ? "bg-accent-soft text-ink"
+              : "bg-ink text-white hover:bg-ink-soft",
           )}
         >
           <Check size={14} strokeWidth={3} aria-hidden />
@@ -730,7 +694,7 @@ function ExerciseDetailView({
         <div>
           <label
             htmlFor={`note-${exercise.id}`}
-            className="text-xs font-medium text-muted-foreground"
+            className="text-[12px] font-semibold text-ink-muted"
           >
             Note for your coach
           </label>
@@ -738,19 +702,21 @@ function ExerciseDetailView({
             id={`note-${exercise.id}`}
             value={noteDraft}
             onChange={(event) => setNoteDraft(event.target.value)}
-            onBlur={saveNote}
+            onBlur={() =>
+              onSetStatus(state.status, noteDraft.trim() || undefined)
+            }
             rows={2}
-            placeholder="e.g. did 2 sets of 8 at 20lb"
-            className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary"
+            placeholder="e.g. did 2 sets of 8 at 20 lb"
+            className="mt-1.5 w-full resize-none rounded-2xl border border-line bg-surface px-3 py-2 text-[14px] outline-none transition-colors focus:border-accent-edge"
           />
         </div>
       ) : (
         <button
           type="button"
           onClick={() => setNoteOpen(true)}
-          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg text-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex min-h-10 items-center gap-1.5 self-start text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
         >
-          <NotebookPen size={13} aria-hidden /> Add a note
+          <NotebookPen size={14} aria-hidden /> Add a note
         </button>
       )}
     </div>
@@ -768,27 +734,29 @@ function ExerciseThumbnail({
 }) {
   const image = exercise.images?.[0];
   const style = { height: size, width: size };
+
   if (!image) {
     return (
       <div
         style={style}
-        className="flex shrink-0 items-center justify-center rounded-lg bg-muted"
+        className="flex shrink-0 items-center justify-center rounded-xl bg-sunken"
       >
-        <Dumbbell size={16} className="text-muted-foreground" aria-hidden />
+        <Dumbbell size={16} className="text-ink-subtle" aria-hidden />
       </div>
     );
   }
+
   return (
     <div
       style={style}
-      className="relative shrink-0 overflow-hidden rounded-lg bg-muted"
+      className="relative shrink-0 overflow-hidden rounded-xl bg-sunken"
     >
       <Image
         src={exerciseImageUrl(image)}
         alt=""
         fill
         sizes={`${size}px`}
-        className={cn("object-cover", dimmed && "opacity-70")}
+        className={cn("object-cover", dimmed && "opacity-60")}
       />
     </div>
   );

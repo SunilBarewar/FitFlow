@@ -237,6 +237,14 @@
       "calt" 1;
   }
 
+  button:not(:disabled) {
+    @apply cursor-pointer;
+  }
+
+  button:disabled {
+    @apply cursor-not-allowed;
+  }
+
   /* Headings inherit the heading font */
   h1,
   h2,
@@ -418,6 +426,13 @@
   outline-offset: 2px;
 }
 
+/* Text fields carry their own focus treatment (a border and ring on the
+   field or its container). A second rectangular outline inside a rounded
+   box reads as a bug, so the global ring sits this one out. */
+.brand-surface :focus-visible:where(textarea, input, select) {
+  outline: none;
+}
+
 /* Hero content rises into place once, on load. */
 @keyframes brand-rise {
   from {
@@ -445,4 +460,3 @@
     }
   }
 }
-

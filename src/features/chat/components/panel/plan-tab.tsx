@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "cn";
 import {
   CalendarRange,
   Check,
@@ -13,12 +12,26 @@ import Image from "next/image";
 import { useState } from "react";
 import type { DayLog, Exercise, Plan, PlanDay } from "@/features/chat/types";
 import { exerciseImageUrl } from "@/lib/exercises/image-url";
+import { cn } from "@/lib/utils/cn";
+
+const WEEKDAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+] as const;
+
+type WeekDayState = "done" | "today" | "upcoming" | "rest";
+
+function todayName() {
+  return new Date().toLocaleDateString("en-US", { weekday: "long" });
+}
 
 function orderFromToday(days: PlanDay[]): PlanDay[] {
-  const todayName = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-  });
-  const index = days.findIndex((day) => day.label === todayName);
+  const index = days.findIndex((day) => day.label === todayName());
   if (index <= 0) return days;
   return [...days.slice(index), ...days.slice(0, index)];
 }
@@ -31,187 +44,6 @@ function dayMuscles(day: PlanDay): string {
   return Array.from(unique).join(", ");
 }
 
-export function PlanTab({
-  plan,
-  todayLog,
-}: {
-  plan: Plan | null;
-  todayLog: DayLog | null;
-}) {
-  const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
-
-  if (!plan) {
-    return (
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-4 py-10 text-center">
-        <CalendarRange
-          size={22}
-          className="text-muted-foreground"
-          aria-hidden
-        />
-        <p className="text-sm font-medium">No plan yet</p>
-        <p className="text-xs text-muted-foreground">
-          Ask your coach to build you a weekly plan and it'll appear here for
-          review.
-        </p>
-      </div>
-    );
-  }
-
-  const orderedDays = orderFromToday(plan.days);
-  const todayName = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-  });
-  const selectedDay = plan.days.find((day) => day.id === selectedDayId);
-
-  if (selectedDay) {
-    return (
-      <div className="space-y-4">
-        <button
-          type="button"
-          onClick={() => setSelectedDayId(null)}
-          className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft size={16} aria-hidden /> All days
-        </button>
-
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-lg font-semibold">
-              {selectedDay.exercises.length === 0
-                ? "Rest & Recovery"
-                : selectedDay.focus}
-            </p>
-            <p className="text-xs text-muted-foreground">{selectedDay.label}</p>
-          </div>
-          {selectedDay.exercises.length > 0 ? (
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {selectedDay.exercises.length} exercise
-              {selectedDay.exercises.length === 1 ? "" : "s"}
-            </span>
-          ) : null}
-        </div>
-
-        {selectedDay.exercises.length > 0 ? (
-          <ul className="space-y-2">
-            {selectedDay.exercises.map((exercise) => (
-              <PlanExerciseRow key={exercise.id} exercise={exercise} />
-            ))}
-          </ul>
-        ) : (
-          <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-border py-10 text-center">
-            <p className="text-sm font-medium">Rest day</p>
-            <p className="text-xs text-muted-foreground">
-              No exercises planned — recovery time.
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const totalExercises = plan.days.reduce(
-    (sum, day) => sum + day.exercises.length,
-    0,
-  );
-  const completedExercises =
-    todayLog?.entries.filter((entry) => entry.status === "done").length ?? 0;
-
-  return (
-    <div className="space-y-1">
-      <div className="space-y-1 pb-3">
-        <p className="text-xl font-bold tracking-tight">
-          Your {plan.days.length}-day exercise plan
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {completedExercises} / {totalExercises} exercises completed
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {plan.name} · {plan.minutesPerSession} min/session ·{" "}
-          {plan.status === "active" ? "Active" : "Draft"} v{plan.version}
-        </p>
-      </div>
-
-      <WeekStrip
-        plan={plan}
-        todayLog={todayLog}
-        onSelectDay={setSelectedDayId}
-      />
-
-      <ul className="overflow-hidden rounded-xl border border-border">
-        {orderedDays.map((day) => {
-          const isToday = day.label === todayName;
-          const isRest = day.exercises.length === 0;
-          const muscles = dayMuscles(day);
-
-          return (
-            <li key={day.id} className="border-b border-border last:border-b-0">
-              <button
-                type="button"
-                onClick={() => setSelectedDayId(day.id)}
-                className={cn(
-                  "flex w-full items-start justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-muted/40",
-                  isToday && "bg-primary/5",
-                )}
-              >
-                <div className="flex min-w-0 items-start gap-3">
-                  <span
-                    className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
-                      isToday ? "border-primary" : "border-muted-foreground/30",
-                    )}
-                    aria-hidden
-                  >
-                    {isToday ? (
-                      <span className="h-2 w-2 rounded-full bg-primary" />
-                    ) : null}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-base font-semibold">
-                        {isRest ? "Rest & Recovery" : day.focus}
-                      </p>
-                      {isToday ? (
-                        <span className="shrink-0 rounded-pill bg-primary/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary uppercase">
-                          Today
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {isRest ? "Rest and recovery" : muscles || day.focus}
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {day.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {isRest
-                      ? "Rest day"
-                      : `${day.exercises.length} exercise${day.exercises.length === 1 ? "" : "s"}`}
-                  </p>
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-type WeekDayState = "done" | "today" | "upcoming" | "rest";
-
-const WEEKDAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
-
 function startOfDay(date: Date) {
   const copy = new Date(date);
   copy.setHours(0, 0, 0, 0);
@@ -220,10 +52,9 @@ function startOfDay(date: Date) {
 
 /**
  * Monday–Sunday of the current week, matched against the plan.
- * Completed days show as done: training days earlier this week count as
- * completed, and today flips to done once every exercise in the real log
- * is marked done. Rest days (or days with nothing planned) show a dash,
- * like the phone mockup.
+ * Training days earlier this week count as done; today flips to done
+ * once every exercise in the real log is marked done. Days with
+ * nothing planned read as rest.
  */
 function buildWeek(plan: Plan, todayLog: DayLog | null) {
   const now = new Date();
@@ -267,7 +98,142 @@ const WEEK_STATE_LABEL: Record<WeekDayState, string> = {
   rest: "rest day",
 };
 
-function WeekStrip({
+export function PlanTab({
+  plan,
+  todayLog,
+}: {
+  plan: Plan | null;
+  todayLog: DayLog | null;
+}) {
+  const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
+
+  if (!plan) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-[22px] border border-dashed border-line-strong px-5 py-12 text-center">
+        <span className="flex size-10 items-center justify-center rounded-full bg-sky-tint text-sky-ink">
+          <CalendarRange size={18} aria-hidden />
+        </span>
+        <p className="pt-1 text-[15px] font-semibold">No plan yet</p>
+        <p className="max-w-56 text-[13px] leading-relaxed text-ink-muted">
+          Ask your coach for a weekly plan and it appears here for review.
+        </p>
+      </div>
+    );
+  }
+
+  const selectedDay = plan.days.find((day) => day.id === selectedDayId);
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {selectedDay ? (
+        <motion.div
+          key={`day-${selectedDay.id}`}
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 12 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="flex flex-col gap-4"
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedDayId(null)}
+            className="inline-flex min-h-10 items-center gap-1 self-start text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
+          >
+            <ChevronLeft size={16} aria-hidden /> All days
+          </button>
+
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-brand-mono text-[11px] tracking-wide text-ink-subtle uppercase">
+                {selectedDay.label}
+              </p>
+              <p className="pt-1 text-[20px] leading-tight font-medium tracking-tight">
+                {selectedDay.exercises.length === 0
+                  ? "Rest & recovery"
+                  : selectedDay.focus}
+              </p>
+            </div>
+            {selectedDay.exercises.length > 0 ? (
+              <span className="shrink-0 rounded-full bg-sunken px-2.5 py-1 font-brand-mono text-[11px] text-ink-muted">
+                {selectedDay.exercises.length}
+              </span>
+            ) : null}
+          </div>
+
+          {selectedDay.exercises.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {selectedDay.exercises.map((exercise) => (
+                <PlanExerciseRow key={exercise.id} exercise={exercise} />
+              ))}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center gap-1 rounded-[22px] border border-dashed border-line-strong py-12 text-center">
+              <p className="text-[15px] font-semibold">Rest day</p>
+              <p className="text-[13px] text-ink-muted">
+                Nothing planned — recovery time.
+              </p>
+            </div>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div
+          key="overview"
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="flex flex-col gap-4"
+        >
+          <PlanSummary plan={plan} todayLog={todayLog} />
+          <WeekRow
+            plan={plan}
+            todayLog={todayLog}
+            onSelectDay={setSelectedDayId}
+          />
+          <DayList plan={plan} onSelectDay={setSelectedDayId} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function PlanSummary({
+  plan,
+  todayLog,
+}: {
+  plan: Plan;
+  todayLog: DayLog | null;
+}) {
+  const totalExercises = plan.days.reduce(
+    (sum, day) => sum + day.exercises.length,
+    0,
+  );
+  const completedExercises =
+    todayLog?.entries.filter((entry) => entry.status === "done").length ?? 0;
+
+  return (
+    <div className="rounded-[22px] border border-line bg-surface p-4 shadow-card">
+      <p className="text-[20px] leading-tight font-medium tracking-tight">
+        {plan.name}
+      </p>
+      <p className="pt-1 text-[13px] text-ink-muted">
+        {plan.minutesPerSession} min a session ·{" "}
+        {plan.status === "active" ? "Active" : "Draft"} · v{plan.version}
+      </p>
+      <div className="mt-3 flex items-center gap-2 border-t border-line pt-3">
+        <span className="font-brand-mono text-[13px] text-ink">
+          {completedExercises}/{totalExercises}
+        </span>
+        <span className="text-[12px] text-ink-muted">
+          exercises logged today
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** The week as seven dots — the brand's rail, made interactive. */
+function WeekRow({
   plan,
   todayLog,
   onSelectDay,
@@ -283,53 +249,48 @@ function WeekStrip({
   return (
     <section
       aria-label="This week"
-      className="mb-4 rounded-xl border border-border bg-card px-4 py-3"
+      className="rounded-[22px] border border-line bg-surface p-4 shadow-card"
     >
       <div className="flex items-center justify-between gap-2 pb-3">
-        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        <p className="font-brand-mono text-[11px] tracking-wide text-ink-subtle uppercase">
           This week
         </p>
         {doneCount > 0 ? (
-          <span className="flex items-center gap-1 rounded-pill bg-brand-green-light px-2 py-1 text-[10px] font-bold text-primary">
+          <span className="inline-flex items-center gap-1 rounded-full bg-mint-tint px-2 py-1 text-[11px] font-semibold text-mint-ink">
             <Check size={10} strokeWidth={3} aria-hidden />
             {doneCount} done
           </span>
         ) : null}
       </div>
 
-      <ol className="flex items-start justify-between">
+      <ol className="flex items-start justify-between gap-1">
         {week.map((day, index) => {
-          const circle = (
+          const content = (
             <>
               <span
                 className={cn(
-                  "text-[10px] leading-none",
-                  day.isToday
-                    ? "font-bold text-primary"
-                    : "font-medium text-muted-foreground",
+                  "text-[10px] leading-none font-semibold",
+                  day.isToday ? "text-ink" : "text-ink-subtle",
                 )}
               >
                 {day.label[0]}
               </span>
               <motion.span
-                initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.5 }}
+                initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.6 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{
                   type: "spring",
                   stiffness: 420,
-                  damping: 20,
-                  delay: reduceMotion ? 0 : index * 0.06,
+                  damping: 22,
+                  delay: reduceMotion ? 0 : index * 0.05,
                 }}
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold",
-                  day.state === "done" && "bg-primary text-primary-foreground",
+                  "flex size-9 items-center justify-center rounded-full font-brand-mono text-[12px]",
+                  day.state === "done" && "bg-accent-edge text-white",
                   day.state === "today" &&
-                    "border-2 border-primary text-primary",
-                  day.state === "upcoming" && "bg-muted text-muted-foreground",
-                  day.state === "rest" && "bg-muted text-muted-foreground",
-                  day.isToday &&
-                    day.state === "done" &&
-                    "ring-2 ring-primary ring-offset-2 ring-offset-card",
+                    "border-2 border-accent-edge bg-accent-soft/50 text-ink",
+                  day.state === "upcoming" && "bg-sunken text-ink-muted",
+                  day.state === "rest" && "bg-sunken text-ink-subtle",
                 )}
               >
                 {day.state === "done" ? (
@@ -340,49 +301,27 @@ function WeekStrip({
                   day.date.getDate()
                 )}
               </motion.span>
-              {/* Date sits under the circle when the circle itself carries
-                  a check or dash instead of the number. */}
-              {day.state === "done" || day.state === "rest" ? (
-                <span
-                  className={cn(
-                    "text-[10px] leading-none",
-                    day.isToday
-                      ? "font-bold text-primary"
-                      : "font-medium text-muted-foreground",
-                  )}
-                >
-                  {day.date.getDate()}
-                </span>
-              ) : day.isToday ? (
-                <span className="h-1 w-1 rounded-full bg-primary" aria-hidden />
-              ) : (
-                <span
-                  className="invisible text-[10px] leading-none"
-                  aria-hidden
-                >
-                  {day.date.getDate()}
-                </span>
-              )}
             </>
           );
 
           const label = `${day.label} ${day.date.getDate()} — ${WEEK_STATE_LABEL[day.state]}`;
 
           return (
-            <li key={day.label} aria-label={day.planDay ? undefined : label}>
+            <li key={day.label}>
               {day.planDay ? (
                 <button
                   type="button"
                   onClick={() => onSelectDay(day.planDay?.id ?? "")}
                   aria-label={`${label}. View this day's workout`}
                   aria-current={day.isToday ? "date" : undefined}
-                  className="flex min-h-[44px] flex-col items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="flex min-h-11 flex-col items-center gap-1.5 rounded-xl px-1 py-1 transition-colors hover:bg-sunken"
                 >
-                  {circle}
+                  {content}
                 </button>
               ) : (
-                <div className="flex min-h-[44px] flex-col items-center gap-1.5 px-1 py-1">
-                  {circle}
+                <div className="flex min-h-11 flex-col items-center gap-1.5 px-1 py-1">
+                  <span className="sr-only">{label}</span>
+                  {content}
                 </div>
               )}
             </li>
@@ -393,34 +332,102 @@ function WeekStrip({
   );
 }
 
+function DayList({
+  plan,
+  onSelectDay,
+}: {
+  plan: Plan;
+  onSelectDay: (dayId: string) => void;
+}) {
+  const today = todayName();
+
+  return (
+    <ul className="overflow-hidden rounded-[22px] border border-line bg-surface shadow-card">
+      {orderFromToday(plan.days).map((day) => {
+        const isToday = day.label === today;
+        const isRest = day.exercises.length === 0;
+        const muscles = dayMuscles(day);
+
+        return (
+          <li key={day.id} className="border-b border-line last:border-b-0">
+            <button
+              type="button"
+              onClick={() => onSelectDay(day.id)}
+              className={cn(
+                "flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-sunken",
+                isToday && "bg-accent-soft/25",
+              )}
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  "size-2 shrink-0 rounded-full",
+                  isToday
+                    ? "bg-accent-edge"
+                    : isRest
+                      ? "bg-line-strong"
+                      : "bg-ink-subtle",
+                )}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="truncate text-[14px] font-semibold">
+                    {isRest ? "Rest & recovery" : day.focus}
+                  </span>
+                  {isToday ? (
+                    <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 text-[9px] font-bold tracking-wide text-white">
+                      TODAY
+                    </span>
+                  ) : null}
+                </span>
+                <span className="block truncate pt-0.5 text-[12px] text-ink-muted">
+                  {day.label} ·{" "}
+                  {isRest
+                    ? "rest day"
+                    : muscles ||
+                      `${day.exercises.length} exercise${day.exercises.length === 1 ? "" : "s"}`}
+                </span>
+              </span>
+              <span className="shrink-0 font-brand-mono text-[12px] text-ink-subtle">
+                {isRest ? "–" : day.exercises.length}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function PlanExerciseRow({ exercise }: { exercise: Exercise }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <li className="overflow-hidden rounded-lg border border-border bg-card">
+    <li className="overflow-hidden rounded-2xl border border-line bg-surface">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
+        className="flex w-full items-center justify-between gap-3 p-2.5 text-left"
       >
-        <div className="flex min-w-0 items-center gap-3">
-          <ExerciseThumbnail exercise={exercise} />
-          <div className="min-w-0">
-            <p className="text-sm font-medium">{exercise.name}</p>
-            <p className="text-xs text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-3">
+          <PlanThumbnail exercise={exercise} />
+          <span className="min-w-0">
+            <span className="block truncate text-[14px] font-semibold">
+              {exercise.name}
+            </span>
+            <span className="block truncate text-[12px] text-ink-muted">
               {exercise.sets} × {exercise.reps} · {exercise.equipment}
-            </p>
-          </div>
-        </div>
-        <ChevronDown
-          size={14}
-          className={cn(
-            "shrink-0 text-muted-foreground transition-transform",
-            open && "rotate-180",
-          )}
-          aria-hidden
-        />
+            </span>
+          </span>
+        </span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="shrink-0 text-ink-subtle"
+        >
+          <ChevronDown size={16} aria-hidden />
+        </motion.span>
       </button>
 
       <AnimatePresence initial={false}>
@@ -429,16 +436,16 @@ function PlanExerciseRow({ exercise }: { exercise: Exercise }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 border-t border-border px-3 py-2.5">
+            <div className="flex flex-col gap-3 border-t border-line p-3">
               {exercise.images?.length ? (
                 <div className="flex gap-2">
                   {exercise.images.slice(0, 2).map((image, index) => (
                     <div
                       key={image}
-                      className="relative h-28 flex-1 overflow-hidden rounded-lg bg-muted"
+                      className="relative h-28 flex-1 overflow-hidden rounded-xl bg-sunken"
                     >
                       <Image
                         src={exerciseImageUrl(image)}
@@ -453,13 +460,13 @@ function PlanExerciseRow({ exercise }: { exercise: Exercise }) {
               ) : null}
 
               {exercise.instructions?.length ? (
-                <ol className="list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-muted-foreground">
+                <ol className="list-decimal space-y-1.5 pl-4 text-[12px] leading-relaxed text-ink-muted">
                   {exercise.instructions.map((step, index) => (
                     <li key={`${exercise.id}-step-${index}`}>{step}</li>
                   ))}
                 </ol>
               ) : (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[12px] text-ink-muted">
                   No step-by-step instructions on file for this one.
                 </p>
               )}
@@ -471,17 +478,19 @@ function PlanExerciseRow({ exercise }: { exercise: Exercise }) {
   );
 }
 
-function ExerciseThumbnail({ exercise }: { exercise: Exercise }) {
+function PlanThumbnail({ exercise }: { exercise: Exercise }) {
   const image = exercise.images?.[0];
+
   if (!image) {
     return (
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted">
-        <Dumbbell size={16} className="text-muted-foreground" aria-hidden />
-      </div>
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sunken">
+        <Dumbbell size={16} className="text-ink-subtle" aria-hidden />
+      </span>
     );
   }
+
   return (
-    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-muted">
+    <span className="relative block size-11 shrink-0 overflow-hidden rounded-xl bg-sunken">
       <Image
         src={exerciseImageUrl(image)}
         alt=""
@@ -489,6 +498,6 @@ function ExerciseThumbnail({ exercise }: { exercise: Exercise }) {
         sizes="44px"
         className="object-cover"
       />
-    </div>
+    </span>
   );
 }

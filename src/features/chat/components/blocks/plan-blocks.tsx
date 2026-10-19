@@ -1,21 +1,30 @@
 "use client";
 
-import { cn } from "cn";
 import {
   ArrowRight,
   CalendarDays,
   Check,
   Clock,
-  Dumbbell,
   RefreshCw,
+  Repeat2,
   Sparkles,
+  Timer,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import type { ChatBlock } from "@/features/chat/types";
+import { cn } from "@/lib/utils/cn";
+import {
+  BlockCard,
+  BlockHeader,
+  Indicator,
+  SecondaryAction,
+} from "../ui/controls";
 
 type PlanCreatedBlock = Extract<ChatBlock, { type: "plan_created" }>;
 type SessionMutationBlock = Extract<ChatBlock, { type: "session_mutation" }>;
+type ExerciseOptionsBlock = Extract<ChatBlock, { type: "exercise_options" }>;
+type ExerciseSwapBlock = Extract<ChatBlock, { type: "exercise_swap" }>;
 
 export function PlanCreatedCard({
   block,
@@ -25,40 +34,53 @@ export function PlanCreatedCard({
   onViewPlan: () => void;
 }) {
   const { plan } = block;
+  const trainingDays = plan.days.filter(
+    (day) => day.exercises.length > 0,
+  ).length;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card"
-    >
-      <div className="flex items-start gap-3 px-4 py-3.5">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-green-light text-primary">
-          <Sparkles size={16} aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold">{plan.name}</p>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <CalendarDays size={12} aria-hidden /> {plan.daysPerWeek}{" "}
-              days/week
+    <BlockCard className="max-w-sm">
+      <BlockHeader
+        icon={Sparkles}
+        title={plan.name}
+        subtitle="Your week is ready — here's the shape of it."
+        tone="mint"
+      />
+
+      <div className="grid grid-cols-3 divide-x divide-line border-y border-line">
+        {[
+          { icon: CalendarDays, value: `${plan.daysPerWeek}`, label: "days" },
+          { icon: Clock, value: `${plan.minutesPerSession}`, label: "min" },
+          { icon: Repeat2, value: `${trainingDays}`, label: "sessions" },
+        ].map((fact) => (
+          <div
+            key={fact.label}
+            className="flex flex-col items-center gap-0.5 py-3"
+          >
+            <fact.icon size={14} className="text-ink-subtle" aria-hidden />
+            <span className="font-brand-mono text-[17px] leading-none text-ink">
+              {fact.value}
             </span>
-            <span className="inline-flex items-center gap-1">
-              <Clock size={12} aria-hidden /> {plan.minutesPerSession} min
-            </span>
+            <span className="text-[11px] text-ink-muted">{fact.label}</span>
           </div>
-        </div>
+        ))}
       </div>
-      <div className="border-t border-border p-3">
-        <button
+
+      <div className="p-3">
+        <motion.button
           type="button"
           onClick={onViewPlan}
-          className="h-10 w-full rounded-pill bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          whileTap={{ scale: 0.98 }}
+          className="group flex h-11 w-full items-center justify-center gap-2 rounded-full bg-ink text-[14px] font-semibold text-white transition-colors hover:bg-ink-soft"
         >
-          See workout plan
-        </button>
+          See your plan
+          <ArrowRight
+            size={15}
+            className="transition-transform group-hover:translate-x-0.5"
+          />
+        </motion.button>
       </div>
-    </motion.div>
+    </BlockCard>
   );
 }
 
@@ -74,75 +96,83 @@ export function SessionMutationBlock({
   onKeep: () => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="w-full max-w-md rounded-2xl border border-border bg-card p-4"
-    >
-      <p className="text-sm font-semibold">Today's adjustment</p>
-      <dl className="mt-3 space-y-2 text-sm">
-        <Row
+    <BlockCard className="max-w-md">
+      <BlockHeader
+        icon={Timer}
+        title="Today, adjusted"
+        subtitle="Your weekly plan stays exactly as it is."
+      />
+
+      <dl className="flex flex-col gap-2 border-t border-line p-4">
+        <ChangeRow
           label="Duration"
           from={`${block.fromMinutes} min`}
           to={`${block.toMinutes} min`}
         />
-        <Row
+        <ChangeRow
           label="Equipment"
           from={block.fromEquipment}
           to={block.toEquipment}
         />
-        <Row
+        <ChangeRow
           label="Intensity"
           from={block.fromIntensity}
           to={block.toIntensity}
         />
-        <div className="flex items-center justify-between text-muted-foreground">
-          <dt>Weekly plan</dt>
-          <dd>Unchanged</dd>
-        </div>
       </dl>
-      {!resolved ? (
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            onClick={onKeep}
-            className="h-10 flex-1 rounded-pill border border-border text-sm font-medium transition-colors hover:bg-muted"
-          >
-            Keep original
-          </button>
-          <button
+
+      {resolved ? (
+        <p className="flex items-center gap-1.5 border-t border-line px-4 py-3 text-[13px] font-semibold text-mint-ink">
+          <Check size={14} strokeWidth={3} aria-hidden /> Applied to today
+        </p>
+      ) : (
+        <div className="flex gap-2 border-t border-line p-3">
+          <SecondaryAction label="Keep original" onClick={onKeep} />
+          <motion.button
             type="button"
             onClick={onStart}
-            className="h-10 flex-1 rounded-pill bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            whileTap={{ scale: 0.97 }}
+            className="h-10 flex-1 rounded-full bg-ink text-[13px] font-semibold text-white transition-colors hover:bg-ink-soft"
           >
             Start adjusted
-          </button>
+          </motion.button>
         </div>
-      ) : (
-        <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-success">
-          <Dumbbell size={14} aria-hidden /> Applied to today
-        </p>
       )}
-    </motion.div>
+    </BlockCard>
   );
 }
 
-function Row({ label, from, to }: { label: string; from: string; to: string }) {
+function ChangeRow({
+  label,
+  from,
+  to,
+}: {
+  label: string;
+  from: string;
+  to: string;
+}) {
   return (
-    <div className="flex items-center justify-between">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("flex items-center gap-1.5 font-medium")}>
-        <span className="text-muted-foreground line-through">{from}</span>
-        <ArrowRight size={12} aria-hidden className="text-muted-foreground" />
-        <span>{to}</span>
+    <div className="flex items-center justify-between gap-3 text-[13px]">
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className="flex min-w-0 items-center gap-2">
+        <span className="truncate text-ink-subtle line-through">{from}</span>
+        <ArrowRight
+          size={12}
+          className="shrink-0 text-ink-subtle"
+          aria-hidden
+        />
+        <motion.span
+          initial={{ opacity: 0, x: -4 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="truncate rounded-full bg-accent-soft px-2 py-0.5 font-semibold text-ink"
+        >
+          {to}
+        </motion.span>
       </dd>
     </div>
   );
 }
-
-type ExerciseOptionsBlock = Extract<ChatBlock, { type: "exercise_options" }>;
-type ExerciseSwapBlock = Extract<ChatBlock, { type: "exercise_swap" }>;
 
 export function ExerciseOptionsBlock({
   block,
@@ -158,136 +188,129 @@ export function ExerciseOptionsBlock({
   const [selectedId, setSelectedId] = useState<string | null>(
     block.selected ?? null,
   );
-
-  function handleSelect(exerciseId: string, name: string) {
-    setSelectedId(exerciseId);
-    onPersistSubmit(exerciseId);
-    onSelect(exerciseId, name);
-  }
-
-  const chosen = block.options.find((o) => o.exerciseId === selectedId);
+  const chosen = block.options.find(
+    (option) => option.exerciseId === selectedId,
+  );
+  const shown = resolved && chosen ? [chosen] : block.options;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card"
-    >
-      <div className="px-4 pb-1 pt-3.5">
-        <p className="text-xs font-medium text-muted-foreground">
+    <BlockCard className="max-w-md">
+      <div className="p-4 pb-3">
+        <p className="font-brand-mono text-[11px] tracking-wide text-ink-subtle uppercase">
           {block.sessionLabel}
         </p>
-        <p className="mt-0.5 text-sm font-semibold">
-          Replace{" "}
-          <span className="text-muted-foreground line-through">
+        <p className="pt-1 text-[15px] font-semibold tracking-[-0.01em]">
+          Instead of{" "}
+          <span className="text-ink-subtle line-through">
             {block.replacing.name}
           </span>
         </p>
       </div>
-      <div className="mt-2 divide-y divide-border border-t border-border">
-        {(resolved && chosen ? [chosen] : block.options).map((option) => {
+
+      <ul className="divide-y divide-line border-t border-line">
+        {shown.map((option, index) => {
           const isSelected = option.exerciseId === selectedId;
+          const decided = resolved || selectedId !== null;
           return (
-            <div
+            <motion.li
               key={option.exerciseId}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, delay: index * 0.05 }}
               className={cn(
                 "flex items-center gap-3 px-4 py-3",
-                isSelected && "bg-muted/50",
+                isSelected && "bg-accent-soft/30",
               )}
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium leading-tight">
+                <p className="truncate text-[14px] leading-tight font-semibold">
                   {option.name}
                 </p>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {option.equipment}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {option.primaryMuscles.slice(0, 2).join(", ")}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {option.sets} × {option.reps}
+                <p className="truncate pt-1 text-[12px] text-ink-muted">
+                  {option.sets} × {option.reps} · {option.equipment}
                 </p>
+                {option.primaryMuscles.length > 0 ? (
+                  <p className="truncate pt-0.5 text-[12px] text-ink-subtle">
+                    {option.primaryMuscles.slice(0, 2).join(", ")}
+                  </p>
+                ) : null}
               </div>
-              {resolved || selectedId ? (
+
+              {decided ? (
                 isSelected ? (
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Check size={14} aria-hidden />
-                  </span>
+                  <Indicator selected />
                 ) : null
               ) : (
-                <button
+                <motion.button
                   type="button"
-                  onClick={() => handleSelect(option.exerciseId, option.name)}
-                  className="h-8 shrink-0 rounded-pill bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setSelectedId(option.exerciseId);
+                    onPersistSubmit(option.exerciseId);
+                    onSelect(option.exerciseId, option.name);
+                  }}
+                  className="h-9 shrink-0 rounded-full bg-ink px-3.5 text-[12px] font-semibold text-white transition-colors hover:bg-ink-soft"
                 >
                   Use this
-                </button>
+                </motion.button>
               )}
-            </div>
+            </motion.li>
           );
         })}
-      </div>
-    </motion.div>
+      </ul>
+    </BlockCard>
   );
 }
 
 export function ExerciseSwapBlock({ block }: { block: ExerciseSwapBlock }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card"
-    >
-      <div className="flex items-center justify-between px-4 pb-2 pt-3.5">
-        <p className="text-xs font-medium text-muted-foreground">
+    <BlockCard className="max-w-md">
+      <div className="flex items-center justify-between gap-3 p-4 pb-3">
+        <p className="font-brand-mono text-[11px] tracking-wide text-ink-subtle uppercase">
           {block.sessionLabel}
         </p>
         {block.scope ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sunken px-2.5 py-1 text-[11px] font-medium text-ink-muted">
             <RefreshCw size={10} aria-hidden />
             {block.scope === "all" ? "All sessions" : "Today only"}
           </span>
         ) : null}
       </div>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-t border-border px-4 py-3">
+
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-t border-line p-4">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-muted-foreground line-through">
+          <p className="truncate text-[13px] font-medium text-ink-subtle line-through">
             {block.from.name}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {block.from.sets} × {block.from.reps}
+          <p className="truncate pt-1 text-[12px] text-ink-subtle">
+            {block.from.sets} × {block.from.reps} · {block.from.equipment}
           </p>
-          <span className="mt-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {block.from.equipment}
-          </span>
         </div>
-        <ArrowRight
-          size={14}
-          className="shrink-0 text-muted-foreground"
-          aria-hidden
-        />
+
+        <motion.span
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 24 }}
+          className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-edge"
+        >
+          <ArrowRight size={14} aria-hidden />
+        </motion.span>
+
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-foreground">
+          <p className="truncate text-[13px] font-semibold text-ink">
             {block.to.name}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {block.to.sets} × {block.to.reps}
+          <p className="truncate pt-1 text-[12px] text-ink-muted">
+            {block.to.sets} × {block.to.reps} · {block.to.equipment}
           </p>
-          <span className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            {block.to.equipment}
-          </span>
         </div>
       </div>
+
       {block.reason ? (
-        <div className="border-t border-border px-4 py-2.5">
-          <p className="text-xs text-muted-foreground">{block.reason}</p>
-        </div>
+        <p className="border-t border-line px-4 py-3 text-[12px] leading-relaxed text-ink-muted">
+          {block.reason}
+        </p>
       ) : null}
-    </motion.div>
+    </BlockCard>
   );
 }
