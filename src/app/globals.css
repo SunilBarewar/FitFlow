@@ -311,3 +311,134 @@
     padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
   }
 }
+
+/* ─────────────────────────────────────────────────
+   Calm brand layer — "Dune" identity
+   Used by the marketing surface (landing page). The app
+   tokens above are untouched; these names are additive so
+   the two can live side by side.
+
+   Identity dials:
+     accent      honey   (accent-soft / -deep / -edge)
+     neutrals    warm stone
+     stage       deep forest, dot grid, honey + mint glow
+     mono        IBM Plex Mono
+     imagery     sunrise coastal dunes (hero),
+                 painted warm sky (closing card)
+     signature   the week rail — seven day dots
+
+   Re-theming = the three --color-accent-* lines.
+   ───────────────────────────────────────────────── */
+@theme inline {
+  --font-brand:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-brand-mono:
+    var(--font-plex-mono), ui-monospace, "SF Mono", SFMono-Regular, Menlo,
+    monospace;
+}
+
+@theme {
+  /* Warm stone neutrals */
+  --color-canvas: #faf9f7;
+  --color-surface: #ffffff;
+  --color-sunken: #f3f1ed;
+  --color-ink: #111110;
+  --color-ink-soft: #2a2724;
+  --color-ink-muted: #56504a;
+  --color-ink-subtle: #a49d94;
+  --color-line: #e8e4de;
+  --color-line-strong: #d8d2c9;
+
+  /* The one accent — honey */
+  --color-accent-soft: #fde8b0;
+  --color-accent-deep: #f8d987;
+  --color-accent-edge: #c98a1a;
+
+  /* Dark product stage — deep forest */
+  --color-stage: #10221b;
+  --color-stage-line: #1e3b30;
+
+  /* Pastel tints: fill, border, title */
+  --color-violet-tint: #f6f1ff;
+  --color-violet-edge: #e6dbff;
+  --color-violet-ink: #7c3aed;
+  --color-sky-tint: #eef6fd;
+  --color-sky-edge: #d4e8f8;
+  --color-sky-ink: #0284c7;
+  --color-peach-tint: #fdf4e9;
+  --color-peach-edge: #f6e0c6;
+  --color-peach-ink: #c2410c;
+  --color-mint-tint: #effbf1;
+  --color-mint-edge: #cdeed4;
+  --color-mint-ink: #15803d;
+
+  /* Soft, low shadows tinted with the ink colour */
+  --shadow-card:
+    0 1px 2px rgb(17 17 16 / 0.04), 0 12px 32px -20px rgb(17 17 16 / 0.18);
+  --shadow-float: 0 8px 30px -12px rgb(17 17 16 / 0.18);
+  --shadow-window:
+    0 1px 0 rgb(17 17 16 / 0.04), 0 30px 70px -30px rgb(0 0 0 / 0.6);
+  --shadow-key: 0 2px 0 var(--color-line-strong);
+}
+
+/* Accent highlighter stroke across the lower half of key words. */
+@utility marker {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 52%,
+    var(--color-accent-soft) 52%,
+    var(--color-accent-soft) 90%,
+    transparent 90%
+  );
+  padding-inline: 0.06em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* The marketing surface opts in to Inter + the warm canvas. */
+.brand-surface {
+  font-family: var(--font-brand);
+  font-feature-settings:
+    "cv11" 1,
+    "ss01" 1;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.brand-surface ::selection {
+  background-color: var(--color-accent-soft);
+  color: var(--color-ink);
+}
+
+.brand-surface :focus-visible {
+  outline: 2px solid var(--color-accent-edge);
+  outline-offset: 2px;
+}
+
+/* Hero content rises into place once, on load. */
+@keyframes brand-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .brand-rise {
+    animation: brand-rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  /* Sections fade up on scroll — only where the browser supports
+     scroll-driven animation, so content is never hidden without it. */
+  @supports (animation-timeline: view()) {
+    .brand-reveal {
+      animation: brand-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 42%;
+    }
+  }
+}
