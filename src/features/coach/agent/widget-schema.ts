@@ -62,7 +62,15 @@ export const WidgetSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("gentle_routine"),
     exercises: z
-      .array(z.object({ name: z.string(), detail: z.string() }))
+      .array(
+        z.object({
+          exerciseId: z.string().optional(),
+          name: z.string(),
+          detail: z.string(),
+          dose: z.string().optional(),
+          sets: z.number().optional(),
+        }),
+      )
       .min(1)
       .max(6),
   }),
@@ -101,9 +109,7 @@ export const WidgetSchema = z.discriminatedUnion("type", [
       type: z.literal("exercise_options"),
       sessionLabel: z
         .string()
-        .describe(
-          "Day and focus context, e.g. 'Monday – Push Strength'.",
-        ),
+        .describe("Day and focus context, e.g. 'Monday – Push Strength'."),
       replacing: z
         .object({
           exerciseId: z.string(),

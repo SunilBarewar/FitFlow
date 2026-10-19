@@ -3,7 +3,13 @@ import type { ChatBlock, Plan } from "@/features/chat/types";
 import { getExerciseById } from "@/lib/exercises/exercise-catalog";
 import { WidgetSchema } from "./widget-schema";
 
-type RawExercise = { exerciseId: string; name: string; sets: number; reps: string; equipment: string };
+type RawExercise = {
+  exerciseId: string;
+  name: string;
+  sets: number;
+  reps: string;
+  equipment: string;
+};
 type RawDay = { label: string; focus: string; exercises: RawExercise[] };
 
 export function buildPlan(
@@ -81,7 +87,27 @@ export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
         toIntensity: widget.toIntensity,
       };
     case "gentle_routine":
-      return { type: "gentle_routine", id, exercises: widget.exercises };
+      return {
+        type: "gentle_routine",
+        id,
+        /* The model names the movement and the dose; the artwork and the
+           step-by-step come from the catalog so neither can be invented. */
+        exercises: widget.exercises.map((exercise) => {
+          const catalog = exercise.exerciseId
+            ? getExerciseById(exercise.exerciseId)
+            : undefined;
+          return {
+            id: exercise.exerciseId,
+            name: exercise.name,
+            detail: exercise.detail,
+            dose: exercise.dose,
+            sets: exercise.sets,
+            instructions: catalog?.instructions,
+            muscles: catalog?.primaryMuscles,
+            images: catalog?.images,
+          };
+        }),
+      };
     case "urgent_care":
       return { type: "urgent_care", id };
     case "exercise_options":
@@ -106,7 +132,12 @@ export function toChatWidgetFromInput(input: unknown): ChatBlock | null {
       return {
         type: "plan_created",
         id,
-        plan: buildPlan(widget.name, widget.daysPerWeek, widget.minutesPerSession, widget.days),
+        plan: buildPlan(
+          widget.name,
+          widget.daysPerWeek,
+          widget.minutesPerSession,
+          widget.days,
+        ),
       };
     default:
       return null;

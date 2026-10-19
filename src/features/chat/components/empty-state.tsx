@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useMemo } from "react";
 import { ChatAiDisclosure } from "./chat-ai-disclosure";
 import { Composer } from "./composer";
-import { AskMark, LowEnergyMark, WeekMark } from "./ui/glyphs";
+import { EasyWaveMark, LowEnergyMark, WeekMark } from "./ui/glyphs";
 
 const SUGGESTIONS = [
   {
@@ -19,9 +19,10 @@ const SUGGESTIONS = [
       "I'm really low on energy today but I still want to move. What would you suggest?",
   },
   {
-    glyph: <AskMark size={15} />,
-    label: "Ask a fitness question",
-    prompt: "I've got a fitness question — can I ask you something?",
+    glyph: <EasyWaveMark size={15} />,
+    label: "Have lower back pain",
+    prompt:
+      "I have lower back pain after sitting in an office chair for long hours. Could you suggest some exercises I can do to feel better?",
   },
 ] as const;
 

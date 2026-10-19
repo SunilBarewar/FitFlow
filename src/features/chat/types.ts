@@ -70,6 +70,22 @@ export type PanelTab = "today" | "plan";
 
 export type ChoiceOption = { id: string; label: string; description?: string };
 
+/** One movement in a comfort routine. The coach writes `name`, `detail` and
+ * the dose; `images`, `instructions` and `muscles` are filled in from the
+ * catalog so the card can show the shape of the movement, not just its name. */
+export type GentleExercise = {
+  id?: string;
+  name: string;
+  /** One line on why this helps / how it should feel. */
+  detail: string;
+  /** How much of it: "8–10 reps", "15–20 sec per leg". */
+  dose?: string;
+  sets?: number;
+  instructions?: string[];
+  muscles?: string[];
+  images?: string[];
+};
+
 export type ChatBlock =
   | {
       type: "choice_chips";
@@ -122,7 +138,7 @@ export type ChatBlock =
   | {
       type: "gentle_routine";
       id: string;
-      exercises: { name: string; detail: string }[];
+      exercises: GentleExercise[];
     }
   | {
       type: "urgent_care";
