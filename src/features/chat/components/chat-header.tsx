@@ -23,13 +23,6 @@ import { AccountMark, ExitMark, HomeMark, RestartMark } from "./ui/glyphs";
 
 export type WorkspaceView = "coach" | "plan";
 
-/** Spelled out, because a reset takes everything with it. */
-const RESET_ERASES = [
-  "Your current plan and every workout in it",
-  "All logged sets, reps, and progress",
-  "The whole chat history with your coach",
-];
-
 const menuItem =
   "flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-semibold outline-none transition-colors hover:bg-sunken disabled:pointer-events-none disabled:opacity-50";
 
@@ -89,7 +82,7 @@ export function ChatHeader({
     };
   }, [open, updatePosition]);
 
-  /** Hold the dialog open through the reset, then dismiss it once it lands. */
+  /** Hold the dialog open while the new plan starts, then dismiss once it lands. */
   useEffect(() => {
     if (startNewChatPending) {
       wasResetting.current = true;
@@ -149,7 +142,7 @@ export function ChatHeader({
                 setConfirmOpen(true);
               }}
             >
-              <RestartMark size={17} /> Reset session
+              <RestartMark size={17} /> New plan
             </button>
             <hr className="my-1 h-px border-0 bg-line" />
             <button
@@ -240,29 +233,10 @@ export function ChatHeader({
           setConfirmOpen(next);
         }}
       >
-        <DialogCenterContent title="Reset this session?">
+        <DialogCenterContent title="Start a new plan?">
           <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-soft">
-            You start over with a fresh coach. Resetting erases:
-          </p>
-
-          <ul className="mt-3.5 flex flex-col gap-2 rounded-2xl border border-line bg-sunken/60 p-3.5">
-            {RESET_ERASES.map((item) => (
-              <li
-                key={item}
-                className="flex items-start gap-2.5 text-[13.5px] font-medium"
-              >
-                <span
-                  aria-hidden
-                  className="mt-[7px] size-1.5 shrink-0 rounded-full bg-danger"
-                />
-                {item}
-              </li>
-            ))}
-          </ul>
-
-          <p className="mt-3 text-[12.5px] leading-relaxed text-ink-soft">
-            Your account and sign-in stay as they are. Nothing else can be
-            recovered — there is no undo.
+            A new plan removes your current plan — all its workouts, progress,
+            and successes. We only allow one plan at a time to keep you focused.
           </p>
 
           <div className="mt-5 flex flex-col gap-2">
@@ -272,13 +246,13 @@ export function ChatHeader({
               className="flex h-11 w-full items-center justify-center rounded-full bg-danger px-4 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-50"
               onClick={onStartNewChat}
             >
-              {startNewChatPending ? "Resetting…" : "Reset session"}
+              {startNewChatPending ? "Starting…" : "Start new plan"}
             </button>
             <DialogClose
               disabled={startNewChatPending}
               className="flex h-11 w-full items-center justify-center rounded-full border border-line bg-surface px-4 text-[14px] font-semibold text-ink-soft transition-colors hover:bg-sunken disabled:pointer-events-none disabled:opacity-50"
             >
-              Keep this session
+              Keep current plan
             </DialogClose>
           </div>
         </DialogCenterContent>
