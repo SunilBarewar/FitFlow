@@ -49,7 +49,7 @@ export function SessionHero({
         : `${pendingCount} exercise${pendingCount === 1 ? "" : "s"} left · ${session.targetMinutes ?? 45} min`;
 
   return (
-    <section className="overflow-hidden rounded-[26px] border border-line bg-surface shadow-card">
+    <section className="rounded-[26px] border border-line bg-surface shadow-card">
       <div className="flex items-start gap-4 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
           <p className="font-brand-mono text-[11px] tracking-wide text-ink-subtle uppercase">
